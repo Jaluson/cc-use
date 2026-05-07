@@ -55,10 +55,10 @@ export async function editCommand(profileLabel: string): Promise<void> {
     const { editModels } = await prompts({
       type: 'select',
       name: 'editModels',
-      message: '是否修改模型映射?',
+      message: 'Modify model mapping?',
       choices: [
-        { title: '否', value: false },
-        { title: '是', value: true },
+        { title: 'No', value: false },
+        { title: 'Yes', value: true },
       ],
       initial: 0,
     });

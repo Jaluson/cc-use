@@ -24,7 +24,7 @@ const program = new Command();
 program
   .name('cc-use')
   .description('Claude Code Provider Runtime Management CLI')
-  .version('0.1.2', '-v, --version');
+  .version('0.1.3', '-v, --version');
 
 program
   .command('use <profile>')

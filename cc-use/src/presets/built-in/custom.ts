@@ -3,7 +3,7 @@ import type { Preset } from '../../core/types.js';
 export const customPreset: Preset = {
   version: 1,
   id: 'custom',
-  label: 'Custom (手动输入)',
+  label: 'Custom (manual)',
   capabilities: {
     'models.discovery': false,
     'auth.apiKey': true,

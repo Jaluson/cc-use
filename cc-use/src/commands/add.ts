@@ -16,7 +16,7 @@ export async function addCommand(
     const { selected } = await prompts({
       type: 'select',
       name: 'selected',
-      message: '选择 Provider Preset:',
+      message: 'Select Provider Preset:',
       choices: presets.map((p) => ({ title: p.label, value: p.id })),
     });
     if (!selected) return;
@@ -33,10 +33,10 @@ export async function addCommand(
     const { name } = await prompts({
       type: 'text',
       name: 'name',
-      message: '设置 profile 名称:',
+      message: 'Enter profile name:',
       initial: preset.id,
       validate: (value: string) => {
-        if (!value) return '名称不能为空';
+        if (!value) return 'Name cannot be empty';
         return true;
       },
     });
@@ -48,10 +48,10 @@ export async function addCommand(
     const { overwrite } = await prompts({
       type: 'select',
       name: 'overwrite',
-      message: `Profile "${profileName}" 已存在，是否覆盖?`,
+      message: `Profile "${profileName}" already exists. Overwrite?`,
       choices: [
-        { title: '否', value: false },
-        { title: '是', value: true },
+        { title: 'No', value: false },
+        { title: 'Yes', value: true },
       ],
       initial: 0,
     });
@@ -66,10 +66,10 @@ export async function addCommand(
     const { value } = await prompts({
       type: isSecret ? 'password' : 'text',
       name: 'value',
-      message: `${key}${template.description ? ` (${template.description})` : ''}${defaultValue ? ` (默认: ${defaultValue})` : ''}:`,
+      message: `${key}${template.description ? ` (${template.description})` : ''}${defaultValue ? ` (default: ${defaultValue})` : ''}:`,
       initial: defaultValue,
       validate: (input: string) => {
-        if (!defaultValue && !input) return '此项必填';
+        if (!defaultValue && !input) return 'This field is required';
         return true;
       },
     });
@@ -93,7 +93,7 @@ export async function addCommand(
   };
 
   await saveProfile(profile);
-  console.log(pc.green(`✓ Profile [${profileName}] 已保存`));
+  console.log(pc.green(`✓ Profile [${profileName}] saved`));
 }
 
 async function promptModelMapping(
@@ -109,14 +109,14 @@ async function promptModelMapping(
     const token = envValues.ANTHROPIC_AUTH_TOKEN || '';
 
     if (baseUrl && token) {
-      const spinner = ora('正在获取远程模型列表...').start();
+      const spinner = ora('Fetching remote model list...').start();
       const result = await discoverModels(baseUrl, token, preset.modelDiscovery, 5000);
       spinner.stop();
       if (result.success && result.models.length > 0) {
         models = result.models;
       } else if (result.success) {
         discoveryFailed = true;
-        discoveryError = '远程 API 未返回任何模型，请检查 Token 或 Base URL 是否有效';
+        discoveryError = 'Remote API returned no models. Please check if Token and Base URL are valid';
       } else {
         discoveryFailed = true;
         discoveryError = result.error;
@@ -124,21 +124,21 @@ async function promptModelMapping(
     }
   }
 
-  // 只有未尝试远程发现（不支持发现或缺少凭据）时才直接使用推荐模型
+  // Only use recommended models when remote discovery was not attempted (not supported or missing credentials)
   if (models.length === 0 && !discoveryFailed && preset.recommendedModels) {
     models = preset.recommendedModels;
   }
 
   if (models.length === 0) {
     if (discoveryFailed) {
-      console.log(pc.yellow(`⚠ 获取模型列表失败: ${discoveryError || '未知错误'}`));
+      console.log(pc.yellow(`⚠ Failed to fetch model list: ${discoveryError || 'Unknown error'}`));
       const { action } = await prompts({
         type: 'select',
         name: 'action',
-        message: '请选择操作:',
+        message: 'Choose an action:',
         choices: [
-          { title: '手动输入模型名称', value: 'manual' },
-          { title: '退出', value: 'exit' },
+          { title: 'Enter model name manually', value: 'manual' },
+          { title: 'Exit', value: 'exit' },
         ],
       });
       if (action === 'exit' || action === undefined) return false;
@@ -151,10 +151,10 @@ async function promptModelMapping(
   const { same } = await prompts({
     type: 'select',
     name: 'same',
-    message: '是否为所有角色使用同一模型?',
+    message: 'Use the same model for all roles?',
     choices: [
-      { title: '是', value: true },
-      { title: '否', value: false },
+      { title: 'Yes', value: true },
+      { title: 'No', value: false },
     ],
     initial: 0,
   });
@@ -164,7 +164,7 @@ async function promptModelMapping(
     const { model } = await prompts({
       type: 'select',
       name: 'model',
-      message: '选择模型:',
+      message: 'Select model:',
       choices: models.map((m) => ({ title: m, value: m })),
     });
     if (!model) return false;
@@ -182,7 +182,7 @@ async function promptModelMapping(
       if (!envKey) continue;
 
       const choices = [
-        ...(previousModel ? [{ title: `[继承: ${previousModel}]`, value: previousModel }] : []),
+        ...(previousModel ? [{ title: `[Inherit: ${previousModel}]`, value: previousModel }] : []),
         ...models.map((m) => ({ title: m, value: m })),
       ];
 
@@ -209,10 +209,10 @@ async function promptManualModels(
   const { same } = await prompts({
     type: 'select',
     name: 'same',
-    message: '是否为所有角色使用同一模型?',
+    message: 'Use the same model for all roles?',
     choices: [
-      { title: '是', value: true },
-      { title: '否', value: false },
+      { title: 'Yes', value: true },
+      { title: 'No', value: false },
     ],
     initial: 0,
   });
@@ -222,7 +222,7 @@ async function promptManualModels(
     const { model } = await prompts({
       type: 'text',
       name: 'model',
-      message: '输入模型名称:',
+      message: 'Enter model name:',
     });
     if (!model) return false;
 
@@ -241,7 +241,7 @@ async function promptManualModels(
       const { model } = await prompts({
         type: 'text',
         name: 'model',
-        message: `${role} Model:${previousModel ? ` (回车继承: ${previousModel})` : ''}:`,
+        message: `${role} Model:${previousModel ? ` (press Enter to inherit: ${previousModel})` : ''}:`,
       });
       if (model === undefined) return false;
 
