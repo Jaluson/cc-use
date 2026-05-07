@@ -1,0 +1,32 @@
+{
+  "name": "cc-use",
+  "version": "0.1.0",
+  "description": "Claude Code Provider Runtime Management CLI",
+  "type": "module",
+  "bin": {
+    "cc-use": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "commander": "^12.0.0",
+    "env-paths": "^3.0.0",
+    "ora": "^8.0.0",
+    "picocolors": "^1.0.0",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/prompts": "^2.4.9",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
