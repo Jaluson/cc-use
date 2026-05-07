@@ -10,7 +10,8 @@ import { currentCommand } from './commands/current.js';
 import { presetListCommand } from './commands/preset-list.js';
 import { validateCommand } from './commands/validate.js';
 import { editCommand } from './commands/edit.js';
-import { cleanCommand } from './commands/clean.js';
+import { rollbackCommand } from './commands/rollback.js';
+import { exportCommand } from './commands/export.js';
 import type { ValidateLevel } from './core/types.js';
 
 function handleError(error: unknown): never {
@@ -23,18 +24,14 @@ const program = new Command();
 program
   .name('cc-use')
   .description('Claude Code Provider Runtime Management CLI')
-  .version('0.1.2');
-
-// `cc-use <profile>` — shortcut for run
-// `cc-use use <profile>` — render only
-// `cc-use run <profile>` — render + launch
-// These share the same command with alias
+  .version('0.1.2', '-v, --version');
 
 program
   .command('use <profile>')
   .description('Render settings.json for a profile without launching Claude')
-  .action(async (profileLabel: string) => {
-    try { await useCommand(profileLabel); }
+  .option('--dry-run', 'Preview the rendered settings.json without writing')
+  .action(async (profileLabel: string, options: { dryRun?: boolean }) => {
+    try { await useCommand(profileLabel, process.cwd(), { dryRun: options.dryRun }); }
     catch (error) { handleError(error); }
   });
 
@@ -46,8 +43,6 @@ program
     try {
       const rawArgs = command.args.slice(1);
       const separatorIndex = rawArgs.indexOf('--');
-      // With -- separator: pass only args after --
-      // Without -- separator: pass all remaining args to claude
       const claudeArgs = separatorIndex >= 0
         ? rawArgs.slice(separatorIndex + 1)
         : rawArgs;
@@ -108,10 +103,11 @@ program
   });
 
 program
-  .command('clean')
-  .description('Remove cc-use managed config from current project and restore backup')
+  .command('rollback')
+  .alias('clean')
+  .description('Remove cc-use managed config and restore previous state')
   .action(async () => {
-    try { await cleanCommand(); }
+    try { await rollbackCommand(); }
     catch (error) { handleError(error); }
   });
 
@@ -137,22 +133,28 @@ program
     } catch (error) { handleError(error); }
   });
 
+program
+  .command('export <profile>')
+  .description('Export a profile for sharing (secrets are masked)')
+  .option('-o, --output <file>', 'Output file path')
+  .action(async (profile: string, options: { output?: string }) => {
+    try { await exportCommand(profile, options); }
+    catch (error) { handleError(error); }
+  });
+
 // Handle `cc-use <profile>` as shortcut for `cc-use run <profile>`
-// Must be after all registered commands
 const args = process.argv.slice(2);
 if (args.length > 0) {
   const firstArg = args[0];
   const isKnownCommand = program.commands.some(
-    (cmd) => cmd.name() === firstArg || cmd.alias() === firstArg
+    (cmd) => cmd.name() === firstArg || cmd.alias() === firstArg,
   );
 
   if (!isKnownCommand && !firstArg.startsWith('-')) {
-    // Rewrite: cc-use <profile> [args...] → cc-use run <profile> [args...]
     process.argv.splice(2, 0, 'run');
   }
 }
 
-// Default action: show help when no command specified
 if (process.argv.length <= 2) {
   program.outputHelp();
   process.exit(0);

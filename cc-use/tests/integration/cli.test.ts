@@ -15,7 +15,7 @@ describe('CLI integration', () => {
 
   it('should show version', () => {
     const output = execSync(`node "${cli}" --version`, { encoding: 'utf-8' });
-    expect(output).toContain('0.1.0');
+    expect(output).toContain('0.1.2');
   });
 
   it('should list presets', () => {

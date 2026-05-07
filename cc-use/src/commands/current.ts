@@ -11,5 +11,6 @@ export async function currentCommand(): Promise<void> {
   console.log(`  Profile: ${meta.profile}`);
   console.log(`  Preset: ${meta.preset}`);
   console.log(`  Config file: ${meta.configFileName || 'settings.json'}`);
+  console.log(`  Managed keys: ${meta.lastManagedEnvKeys.length}`);
   console.log(`  Updated: ${meta.updatedAt}`);
 }

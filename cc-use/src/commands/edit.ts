@@ -1,5 +1,6 @@
 import prompts from 'prompts';
 import pc from 'picocolors';
+import ora from 'ora';
 import { loadProfile, saveProfile, profileExists } from '../core/profile.js';
 import { loadPreset } from '../core/preset.js';
 import { discoverModels } from '../core/model-discovery.js';
@@ -77,7 +78,9 @@ async function editModelMapping(
   const token = envValues.ANTHROPIC_AUTH_TOKEN || '';
 
   if (preset.capabilities?.['models.discovery'] && preset.modelDiscovery && baseUrl && token) {
+    const spinner = ora('Fetching available models...').start();
     const result = await discoverModels(baseUrl, token, preset.modelDiscovery, 5000);
+    spinner.stop();
     if (result.success) {
       models = result.models;
     }

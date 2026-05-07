@@ -1,5 +1,6 @@
 import prompts from 'prompts';
 import pc from 'picocolors';
+import ora from 'ora';
 import { getAllPresets } from '../core/preset.js';
 import { saveProfile, profileExists } from '../core/profile.js';
 import { discoverModels } from '../core/model-discovery.js';
@@ -101,7 +102,9 @@ async function promptModelMapping(
     const token = envValues.ANTHROPIC_AUTH_TOKEN || '';
 
     if (baseUrl && token) {
+      const spinner = ora('Fetching available models...').start();
       const result = await discoverModels(baseUrl, token, preset.modelDiscovery, 5000);
+      spinner.stop();
       if (result.success) {
         models = result.models;
       }
