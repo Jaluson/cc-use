@@ -18,8 +18,13 @@ export async function renderSettings(
   let existing: SettingsJson = {};
 
   if (existsSync(settingsPath)) {
-    const content = await readFile(settingsPath, 'utf-8');
-    existing = JSON.parse(content) as SettingsJson;
+    try {
+      const content = await readFile(settingsPath, 'utf-8');
+      existing = JSON.parse(content) as SettingsJson;
+    } catch {
+      console.warn(`Warning: ${settingsPath} is invalid JSON, starting fresh`);
+      existing = {};
+    }
   }
 
   const result: SettingsJson = { ...existing };
@@ -27,20 +32,22 @@ export async function renderSettings(
   // Clean up old managed env keys via metadata
   const metadataPath = join(cwd, '.claude', 'cc-use.json');
   if (existsSync(metadataPath)) {
-    const metaContent = await readFile(metadataPath, 'utf-8');
-    const meta = JSON.parse(metaContent) as Metadata;
-    if (meta.lastManagedEnvKeys && result.env) {
-      for (const key of meta.lastManagedEnvKeys) {
-        delete result.env[key];
+    try {
+      const metaContent = await readFile(metadataPath, 'utf-8');
+      const meta = JSON.parse(metaContent) as Metadata;
+      if (meta.lastManagedEnvKeys && result.env) {
+        for (const key of meta.lastManagedEnvKeys) {
+          delete result.env[key];
+        }
       }
+    } catch {
+      // Ignore corrupted metadata, will overwrite anyway
     }
   }
 
-  // Write new managed env keys
   const managedEnvKeys = Object.keys(profile.env);
   result.env = { ...result.env, ...profile.env };
 
-  // Write providerRuntimeSettings allowlist
   if (preset.providerRuntimeSettings) {
     for (const [key, value] of Object.entries(preset.providerRuntimeSettings)) {
       result[key] = value;
