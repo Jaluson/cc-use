@@ -24,6 +24,7 @@ export async function writeMetadata(metadata: Metadata, cwd: string = process.cw
 export function createMetadata(
   profile: { label: string; preset: string; presetVersion: number },
   envKeys: string[],
+  configFileName: string = 'settings.json',
 ): Metadata {
   return {
     version: 1,
@@ -33,6 +34,7 @@ export function createMetadata(
     updatedAt: new Date().toISOString(),
     profileChecksum: computeChecksum(profile),
     lastManagedEnvKeys: envKeys,
+    configFileName,
   };
 }
 

@@ -3,6 +3,8 @@ import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import pc from 'picocolors';
 import { useCommand } from './use.js';
+import { loadProfile } from '../core/profile.js';
+import { loadPreset } from '../core/preset.js';
 import { restoreBackup } from '../core/atomic-write.js';
 
 export async function runCommand(
@@ -10,7 +12,10 @@ export async function runCommand(
   claudeArgs: string[] = [],
   cwd: string = process.cwd(),
 ): Promise<void> {
-  const settingsPath = join(cwd, '.claude', 'settings.json');
+  const profile = await loadProfile(profileLabel);
+  const preset = profile ? await loadPreset(profile.preset) : undefined;
+  const configFileName = profile?.configFileName || preset?.configFileName || 'settings.json';
+  const settingsPath = join(cwd, '.claude', configFileName);
   const backupPath = `${settingsPath}.backup`;
 
   try {
@@ -30,7 +35,7 @@ export async function runCommand(
   } catch (error) {
     if (existsSync(backupPath)) {
       await restoreBackup(settingsPath, backupPath);
-      console.log(pc.yellow('✓ Restored previous settings.json'));
+      console.log(pc.yellow(`✓ Restored previous ${configFileName}`));
     }
     throw error;
   }

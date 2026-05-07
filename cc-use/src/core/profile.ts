@@ -9,13 +9,21 @@ function getProfilePath(label: string): string {
   return join(paths.profiles, `${label}.json`);
 }
 
-export async function saveProfile(profile: Profile): Promise<void> {
+export async function saveProfile(profile: Profile, oldLabel?: string): Promise<void> {
   const paths = getConfigPaths();
   if (!existsSync(paths.profiles)) {
     await mkdir(paths.profiles, { recursive: true });
   }
   const filePath = getProfilePath(profile.label);
   await writeFile(filePath, JSON.stringify(profile, null, 2), 'utf-8');
+
+  // If label changed, remove the old file
+  if (oldLabel && oldLabel !== profile.label) {
+    const oldPath = getProfilePath(oldLabel);
+    if (existsSync(oldPath)) {
+      await unlink(oldPath);
+    }
+  }
 }
 
 export async function loadProfile(label: string): Promise<Profile | undefined> {

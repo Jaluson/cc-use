@@ -83,6 +83,7 @@ export async function addCommand(
     presetVersion: preset.version,
     label: profileName,
     env: envValues,
+    configFileName: preset.configFileName,
   };
 
   await saveProfile(profile);

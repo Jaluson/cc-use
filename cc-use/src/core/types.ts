@@ -23,6 +23,7 @@ export interface Preset {
   modelEnvMapping: Record<string, string>;
   env: Record<string, EnvVariableTemplate>;
   providerRuntimeSettings?: Record<string, unknown>;
+  configFileName?: string;
 }
 
 export interface Profile {
@@ -31,6 +32,7 @@ export interface Profile {
   presetVersion: number;
   label: string;
   env: Record<string, string>;
+  configFileName?: string;
 }
 
 export interface Metadata {
@@ -41,6 +43,7 @@ export interface Metadata {
   updatedAt: string;
   profileChecksum: string;
   lastManagedEnvKeys: string[];
+  configFileName: string;
 }
 
 export interface SettingsJson {

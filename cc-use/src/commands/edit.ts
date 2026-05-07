@@ -1,6 +1,6 @@
 import prompts from 'prompts';
 import pc from 'picocolors';
-import { loadProfile, saveProfile } from '../core/profile.js';
+import { loadProfile, saveProfile, profileExists } from '../core/profile.js';
 import { loadPreset } from '../core/preset.js';
 import { discoverModels } from '../core/model-discovery.js';
 import type { Preset } from '../core/types.js';
@@ -18,6 +18,20 @@ export async function editCommand(profileLabel: string): Promise<void> {
 
   console.log(pc.bold(`Editing profile: ${profileLabel}`));
   console.log(pc.dim('Leave blank to keep current value'));
+
+  // Edit profile label (name)
+  const originalLabel = profile.label;
+  const { newLabel } = await prompts({
+    type: 'text',
+    name: 'newLabel',
+    message: `Profile name [${profile.label}]:`,
+  });
+  if (newLabel !== undefined && newLabel !== '' && newLabel !== profile.label) {
+    if (await profileExists(newLabel)) {
+      throw new Error(`Profile "${newLabel}" already exists`);
+    }
+    profile.label = newLabel;
+  }
 
   // Edit env variables
   for (const [key, template] of Object.entries(preset.env)) {
@@ -49,8 +63,8 @@ export async function editCommand(profileLabel: string): Promise<void> {
     }
   }
 
-  await saveProfile(profile);
-  console.log(pc.green(`✓ Profile "${profileLabel}" updated`));
+  await saveProfile(profile, originalLabel);
+  console.log(pc.green(`✓ Profile "${profile.label}" updated`));
 }
 
 async function editModelMapping(

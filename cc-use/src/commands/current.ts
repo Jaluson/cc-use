@@ -10,5 +10,6 @@ export async function currentCommand(): Promise<void> {
   console.log(pc.bold('Current profile:'));
   console.log(`  Profile: ${meta.profile}`);
   console.log(`  Preset: ${meta.preset}`);
+  console.log(`  Config file: ${meta.configFileName || 'settings.json'}`);
   console.log(`  Updated: ${meta.updatedAt}`);
 }

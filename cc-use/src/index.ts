@@ -23,7 +23,7 @@ const program = new Command();
 program
   .name('cc-use')
   .description('Claude Code Provider Runtime Management CLI')
-  .version('0.1.0');
+  .version('0.1.2');
 
 // `cc-use <profile>` — shortcut for run
 // `cc-use use <profile>` — render only

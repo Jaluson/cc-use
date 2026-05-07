@@ -25,13 +25,14 @@ export async function useCommand(profileLabel: string, cwd: string = process.cwd
     await mkdir(claudeDir, { recursive: true });
   }
 
-  const { settings, managedEnvKeys } = await renderSettings(profile, preset, cwd);
+  const configFileName = profile.configFileName || preset.configFileName || 'settings.json';
+  const { settings, managedEnvKeys } = await renderSettings(profile, preset, cwd, configFileName);
   const settingsContent = JSON.stringify(settings, null, 2);
 
-  const settingsPath = join(claudeDir, 'settings.json');
+  const settingsPath = join(claudeDir, configFileName);
   const result = await atomicWrite(settingsPath, settingsContent);
 
-  const metadata = createMetadata(profile, managedEnvKeys);
+  const metadata = createMetadata(profile, managedEnvKeys, configFileName);
   await writeMetadata(metadata, cwd);
 
   if (result.backupPath) {
@@ -40,7 +41,7 @@ export async function useCommand(profileLabel: string, cwd: string = process.cwd
 
   const gitSafety = await checkGitSafety(cwd);
   if (!gitSafety.isIgnored) {
-    console.log(pc.yellow('⚠ .claude/settings.json contains credentials'));
+    console.log(pc.yellow(`⚠ .claude/${configFileName} contains credentials`));
     console.log(pc.yellow('⚠ .claude/ is not ignored by git'));
   }
 

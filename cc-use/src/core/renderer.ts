@@ -12,8 +12,9 @@ export async function renderSettings(
   profile: Profile,
   preset: Preset,
   cwd: string = process.cwd(),
+  configFileName: string = 'settings.json',
 ): Promise<RenderResult> {
-  const settingsPath = join(cwd, '.claude', 'settings.json');
+  const settingsPath = join(cwd, '.claude', configFileName);
   let existing: SettingsJson = {};
 
   if (existsSync(settingsPath)) {
