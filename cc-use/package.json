@@ -6,7 +6,7 @@
   "author": "jaluson",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Jaluson/cc-use.git"
+    "url": "git+https://github.com/Jaluson/cc-use.git"
   },
   "keywords": [
     "claude",
@@ -17,7 +17,7 @@
   ],
   "type": "module",
   "bin": {
-    "cc-use": "./dist/index.js"
+    "cc-use": "dist/index.js"
   },
   "files": [
     "dist"
