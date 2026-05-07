@@ -17,7 +17,6 @@ export async function saveProfile(profile: Profile, oldLabel?: string): Promise<
   const filePath = getProfilePath(profile.label);
   await writeFile(filePath, JSON.stringify(profile, null, 2), 'utf-8');
 
-  // If label changed, remove the old file
   if (oldLabel && oldLabel !== profile.label) {
     const oldPath = getProfilePath(oldLabel);
     if (existsSync(oldPath)) {
@@ -31,8 +30,12 @@ export async function loadProfile(label: string): Promise<Profile | undefined> {
   if (!existsSync(filePath)) {
     return undefined;
   }
-  const content = await readFile(filePath, 'utf-8');
-  return JSON.parse(content) as Profile;
+  try {
+    const content = await readFile(filePath, 'utf-8');
+    return JSON.parse(content) as Profile;
+  } catch {
+    throw new Error(`Profile file corrupted: ${filePath}`);
+  }
 }
 
 export async function deleteProfile(label: string): Promise<boolean> {
@@ -57,4 +60,37 @@ export async function listProfiles(): Promise<string[]> {
 
 export async function profileExists(label: string): Promise<boolean> {
   return existsSync(getProfilePath(label));
+}
+
+export async function findSimilarProfiles(input: string, candidates: string[]): Promise<string[]> {
+  const distances = candidates.map((c) => ({
+    name: c,
+    distance: levenshteinDistance(input.toLowerCase(), c.toLowerCase()),
+  }));
+  distances.sort((a, b) => a.distance - b.distance);
+  return distances
+    .filter((d) => d.distance <= 3 && d.distance > 0)
+    .slice(0, 2)
+    .map((d) => d.name);
+}
+
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = [];
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      const cost = b[i - 1] === a[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost,
+      );
+    }
+  }
+  return matrix[b.length][a.length];
 }

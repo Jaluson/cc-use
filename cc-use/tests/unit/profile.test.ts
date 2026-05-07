@@ -48,4 +48,18 @@ describe('profile', () => {
     expect(await deleteProfile('test-profile')).toBe(true);
     expect(await loadProfile('test-profile')).toBeUndefined();
   });
+
+  it('should suggest similar profile names', async () => {
+    const { findSimilarProfiles } = await import('../../src/core/profile.js');
+    const candidates = ['kimi', 'work', 'personal'];
+    const result = await findSimilarProfiles('kimii', candidates);
+    expect(result).toContain('kimi');
+  });
+
+  it('should return empty for very different names', async () => {
+    const { findSimilarProfiles } = await import('../../src/core/profile.js');
+    const candidates = ['kimi', 'work'];
+    const result = await findSimilarProfiles('xyzabc', candidates);
+    expect(result).toHaveLength(0);
+  });
 });
