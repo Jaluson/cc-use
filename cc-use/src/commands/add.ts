@@ -46,10 +46,14 @@ export async function addCommand(
 
   if (await profileExists(profileName)) {
     const { overwrite } = await prompts({
-      type: 'confirm',
+      type: 'select',
       name: 'overwrite',
       message: `Profile "${profileName}" 已存在，是否覆盖?`,
-      initial: false,
+      choices: [
+        { title: '否', value: false },
+        { title: '是', value: true },
+      ],
+      initial: 0,
     });
     if (!overwrite) return;
   }
@@ -75,7 +79,8 @@ export async function addCommand(
   }
 
   if (preset.modelRoles && preset.modelRoles.length > 0) {
-    await promptModelMapping(preset, envValues);
+    const completed = await promptModelMapping(preset, envValues);
+    if (!completed) return;
   }
 
   const profile: Profile = {
@@ -94,40 +99,66 @@ export async function addCommand(
 async function promptModelMapping(
   preset: Preset,
   envValues: Record<string, string>,
-): Promise<void> {
+): Promise<boolean> {
   let models: string[] = [];
+  let discoveryFailed = false;
+  let discoveryError: string | undefined;
 
   if (preset.capabilities?.['models.discovery'] && preset.modelDiscovery) {
     const baseUrl = envValues.ANTHROPIC_BASE_URL || '';
     const token = envValues.ANTHROPIC_AUTH_TOKEN || '';
 
     if (baseUrl && token) {
-      const spinner = ora('Fetching available models...').start();
+      const spinner = ora('正在获取远程模型列表...').start();
       const result = await discoverModels(baseUrl, token, preset.modelDiscovery, 5000);
       spinner.stop();
-      if (result.success) {
+      if (result.success && result.models.length > 0) {
         models = result.models;
+      } else if (result.success) {
+        discoveryFailed = true;
+        discoveryError = '远程 API 未返回任何模型，请检查 Token 或 Base URL 是否有效';
+      } else {
+        discoveryFailed = true;
+        discoveryError = result.error;
       }
     }
   }
 
-  if (models.length === 0 && preset.recommendedModels) {
+  // 只有未尝试远程发现（不支持发现或缺少凭据）时才直接使用推荐模型
+  if (models.length === 0 && !discoveryFailed && preset.recommendedModels) {
     models = preset.recommendedModels;
   }
 
   if (models.length === 0) {
-    // No models available: manual input mode
-    await promptManualModels(preset, envValues);
-    return;
+    if (discoveryFailed) {
+      console.log(pc.yellow(`⚠ 获取模型列表失败: ${discoveryError || '未知错误'}`));
+      const { action } = await prompts({
+        type: 'select',
+        name: 'action',
+        message: '请选择操作:',
+        choices: [
+          { title: '手动输入模型名称', value: 'manual' },
+          { title: '退出', value: 'exit' },
+        ],
+      });
+      if (action === 'exit' || action === undefined) return false;
+      return await promptManualModels(preset, envValues);
+    } else {
+      return await promptManualModels(preset, envValues);
+    }
   }
 
   const { same } = await prompts({
-    type: 'confirm',
+    type: 'select',
     name: 'same',
     message: '是否为所有角色使用同一模型?',
-    initial: true,
+    choices: [
+      { title: '是', value: true },
+      { title: '否', value: false },
+    ],
+    initial: 0,
   });
-  if (same === undefined) return;
+  if (same === undefined) return false;
 
   if (same) {
     const { model } = await prompts({
@@ -136,7 +167,7 @@ async function promptModelMapping(
       message: '选择模型:',
       choices: models.map((m) => ({ title: m, value: m })),
     });
-    if (!model) return;
+    if (!model) return false;
 
     for (const role of preset.modelRoles) {
       const envKey = preset.modelEnvMapping[role];
@@ -161,25 +192,31 @@ async function promptModelMapping(
         message: `${role} Model:`,
         choices,
       });
-      if (model === undefined) return;
+      if (model === undefined) return false;
 
       envValues[envKey] = model;
       previousModel = model;
     }
   }
+
+  return true;
 }
 
 async function promptManualModels(
   preset: Preset,
   envValues: Record<string, string>,
-): Promise<void> {
+): Promise<boolean> {
   const { same } = await prompts({
-    type: 'confirm',
+    type: 'select',
     name: 'same',
     message: '是否为所有角色使用同一模型?',
-    initial: true,
+    choices: [
+      { title: '是', value: true },
+      { title: '否', value: false },
+    ],
+    initial: 0,
   });
-  if (same === undefined) return;
+  if (same === undefined) return false;
 
   if (same) {
     const { model } = await prompts({
@@ -187,7 +224,7 @@ async function promptManualModels(
       name: 'model',
       message: '输入模型名称:',
     });
-    if (!model) return;
+    if (!model) return false;
 
     for (const role of preset.modelRoles) {
       const envKey = preset.modelEnvMapping[role];
@@ -206,10 +243,12 @@ async function promptManualModels(
         name: 'model',
         message: `${role} Model:${previousModel ? ` (回车继承: ${previousModel})` : ''}:`,
       });
-      if (model === undefined) return;
+      if (model === undefined) return false;
 
       envValues[envKey] = model || previousModel;
       previousModel = envValues[envKey];
     }
   }
+
+  return true;
 }

@@ -1,9 +1,9 @@
 import type { Preset } from '../../core/types.js';
 
-export const kimiPreset: Preset = {
+export const minimaxPreset: Preset = {
   version: 1,
-  id: 'kimi',
-  label: 'Moonshot Kimi Coding Plan (CN)',
+  id: 'minimax',
+  label: 'MiniMax (CN)',
   capabilities: {
     'models.discovery': true,
     'models.reasoning': true,
@@ -15,7 +15,7 @@ export const kimiPreset: Preset = {
     responsePath: 'data',
     idField: 'id',
   },
-  recommendedModels: ['kimi-for-coding'],
+  recommendedModels: ['MiniMax-Text-01'],
   modelRoles: ['default', 'haiku', 'sonnet', 'opus', 'reasoning'],
   modelEnvMapping: {
     default: 'ANTHROPIC_MODEL',
@@ -26,12 +26,12 @@ export const kimiPreset: Preset = {
   },
   env: {
     ANTHROPIC_BASE_URL: {
-      value: 'https://api.kimi.com/coding/',
-      description: 'Kimi Coding Plan API base URL',
+      value: 'https://api.minimaxi.com/anthropic',
+      description: 'MiniMax API base URL',
     },
     ANTHROPIC_AUTH_TOKEN: {
       value: '',
-      description: 'Kimi API Key',
+      description: 'MiniMax API Key',
       secret: true,
     },
   },

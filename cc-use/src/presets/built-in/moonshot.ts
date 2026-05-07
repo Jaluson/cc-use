@@ -1,9 +1,9 @@
 import type { Preset } from '../../core/types.js';
 
-export const kimiPreset: Preset = {
+export const moonshotPreset: Preset = {
   version: 1,
-  id: 'kimi',
-  label: 'Moonshot Kimi Coding Plan (CN)',
+  id: 'moonshot',
+  label: 'Moonshot Kimi (CN)',
   capabilities: {
     'models.discovery': true,
     'models.reasoning': true,
@@ -15,7 +15,7 @@ export const kimiPreset: Preset = {
     responsePath: 'data',
     idField: 'id',
   },
-  recommendedModels: ['kimi-for-coding'],
+  recommendedModels: ['kimi-latest'],
   modelRoles: ['default', 'haiku', 'sonnet', 'opus', 'reasoning'],
   modelEnvMapping: {
     default: 'ANTHROPIC_MODEL',
@@ -26,12 +26,12 @@ export const kimiPreset: Preset = {
   },
   env: {
     ANTHROPIC_BASE_URL: {
-      value: 'https://api.kimi.com/coding/',
-      description: 'Kimi Coding Plan API base URL',
+      value: 'https://api.moonshot.cn/anthropic',
+      description: 'Moonshot Kimi API base URL',
     },
     ANTHROPIC_AUTH_TOKEN: {
       value: '',
-      description: 'Kimi API Key',
+      description: 'Moonshot Kimi API Key',
       secret: true,
     },
   },
