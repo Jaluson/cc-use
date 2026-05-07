@@ -44,6 +44,7 @@ export interface Metadata {
   profileChecksum: string;
   lastManagedEnvKeys: string[];
   configFileName: string;
+  hasOriginalBackup?: boolean;
 }
 
 export interface SettingsJson {

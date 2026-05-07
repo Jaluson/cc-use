@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
 import type { Metadata } from './types.js';
 import { atomicWrite } from './atomic-write.js';
 
@@ -11,8 +12,13 @@ export async function readMetadata(cwd: string = process.cwd()): Promise<Metadat
   if (!existsSync(filePath)) {
     return undefined;
   }
-  const content = await readFile(filePath, 'utf-8');
-  return JSON.parse(content) as Metadata;
+  try {
+    const content = await readFile(filePath, 'utf-8');
+    return JSON.parse(content) as Metadata;
+  } catch {
+    console.warn(`Warning: ${filePath} is corrupted, will regenerate`);
+    return undefined;
+  }
 }
 
 export async function writeMetadata(metadata: Metadata, cwd: string = process.cwd()): Promise<void> {
@@ -25,6 +31,7 @@ export function createMetadata(
   profile: { label: string; preset: string; presetVersion: number },
   envKeys: string[],
   configFileName: string = 'settings.json',
+  hasOriginalBackup: boolean = false,
 ): Metadata {
   return {
     version: 1,
@@ -35,15 +42,11 @@ export function createMetadata(
     profileChecksum: computeChecksum(profile),
     lastManagedEnvKeys: envKeys,
     configFileName,
+    hasOriginalBackup,
   };
 }
 
 function computeChecksum(data: unknown): string {
   const str = JSON.stringify(data);
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash + char) | 0;
-  }
-  return `sha256:${Math.abs(hash).toString(16)}`;
+  return createHash('sha256').update(str).digest('hex');
 }
