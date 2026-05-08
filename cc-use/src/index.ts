@@ -12,6 +12,7 @@ import { validateCommand } from './commands/validate.js';
 import { editCommand } from './commands/edit.js';
 import { rollbackCommand } from './commands/rollback.js';
 import { exportCommand } from './commands/export.js';
+import { importFromCcSwitchCommand } from './commands/import-from-cc-switch.js';
 import type { ValidateLevel } from './core/types.js';
 
 function handleError(error: unknown): never {
@@ -69,12 +70,18 @@ program
     catch (error) { handleError(error); }
   });
 
+function collect(value: string, previous: string[]): string[] {
+  return previous.concat([value]);
+}
+
 program
-  .command('remove <profiles...>')
+  .command('remove [profiles...]')
   .alias('rm')
   .description('Remove one or more profiles')
-  .action(async (profiles: string[]) => {
-    try { await removeCommand(profiles); }
+  .option('-p, --profile <profile>', 'Profile to remove (can be used multiple times)', collect, [])
+  .action(async (profiles: string[], options: { profile: string[] }) => {
+    const allProfiles = [...profiles, ...options.profile];
+    try { await removeCommand(allProfiles); }
     catch (error) { handleError(error); }
   });
 
@@ -140,6 +147,19 @@ program
   .action(async (profile: string, options: { output?: string }) => {
     try { await exportCommand(profile, options); }
     catch (error) { handleError(error); }
+  });
+
+program
+  .command('import-from-cc-switch')
+  .alias('import-cc')
+  .description('Import profiles from CC Switch')
+  .option('--dry-run', 'Preview without writing')
+  .action(async (options: { dryRun?: boolean }) => {
+    try {
+      await importFromCcSwitchCommand({ dryRun: options.dryRun });
+    } catch (error) {
+      handleError(error);
+    }
   });
 
 // Handle `cc-use <profile>` as shortcut for `cc-use run <profile>`

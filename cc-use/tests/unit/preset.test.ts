@@ -11,7 +11,7 @@ describe('preset', () => {
   it('should find preset by id', () => {
     const preset = getBuiltInPresetById('kimi');
     expect(preset).toBeDefined();
-    expect(preset?.label).toBe('Moonshot Kimi');
+    expect(preset?.label).toBe('Moonshot Kimi Coding Plan (CN)');
   });
 
   it('should return undefined for unknown preset', () => {
