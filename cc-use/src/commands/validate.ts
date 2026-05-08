@@ -1,9 +1,10 @@
-import pc from 'picocolors';
 import ora from 'ora';
+import pc from 'picocolors';
 import { loadProfile } from '../core/profile.js';
 import { loadPreset } from '../core/preset.js';
 import { discoverModels } from '../core/model-discovery.js';
 import { validateProfile } from '../core/schema.js';
+import { printCommandHeader, printBox, s } from '../ui/index.js';
 import type { ValidateLevel } from '../core/types.js';
 
 export async function validateCommand(
@@ -20,15 +21,17 @@ export async function validateCommand(
     throw new Error(`Preset "${profile.preset}" not found`);
   }
 
-  console.log(pc.bold(`Validating profile: ${profileLabel}`));
+  printCommandHeader('Validate Profile', profileLabel);
+
+  const results: { status: 'pass' | 'fail' | 'warn'; message: string }[] = [];
 
   // Schema validation
   const schemaResult = validateProfile(profile, preset);
   if (schemaResult.valid) {
-    console.log(pc.green('✓ schema valid'));
+    results.push({ status: 'pass', message: 'Schema valid' });
   } else {
     for (const err of schemaResult.errors) {
-      console.log(pc.red(`✗ ${err.field}: ${err.message}`));
+      results.push({ status: 'fail', message: `${err.field}: ${err.message}` });
     }
   }
 
@@ -39,9 +42,9 @@ export async function validateCommand(
 
   const missingFields = requiredFields.filter((key) => !profile.env[key]);
   if (missingFields.length > 0) {
-    console.log(pc.red(`✗ Required env incomplete: ${missingFields.join(', ')}`));
+    results.push({ status: 'fail', message: `Required env incomplete: ${missingFields.join(', ')}` });
   } else {
-    console.log(pc.green('✓ Required env complete'));
+    results.push({ status: 'pass', message: 'Required env complete' });
   }
 
   // Online checks
@@ -77,13 +80,35 @@ export async function validateCommand(
             const envKey = preset.modelEnvMapping[role];
             const modelName = envKey ? profile.env[envKey] : undefined;
             if (modelName && result.models.includes(modelName)) {
-              console.log(pc.green(`✓ ${role} model found: ${modelName}`));
+              results.push({ status: 'pass', message: `${role} model found: ${modelName}` });
             } else if (modelName) {
-              console.log(pc.yellow(`✗ ${role} model not found: ${modelName}`));
+              results.push({ status: 'warn', message: `${role} model not found: ${modelName}` });
             }
           }
         }
       }
     }
   }
+
+  // Print summary
+  console.log();
+  console.log(pc.cyan(pc.bold(`${s.chevron} Validation Results`)));
+  console.log(pc.dim('  ' + '─'.repeat(30)));
+
+  for (const r of results) {
+    const icon = r.status === 'pass' ? pc.green(s.success) : r.status === 'fail' ? pc.red(s.error) : pc.yellow(s.warning);
+    const text = r.status === 'pass' ? pc.white(r.message) : r.status === 'fail' ? pc.red(r.message) : pc.yellow(r.message);
+    console.log(`  ${icon} ${text}`);
+  }
+
+  const passCount = results.filter((r) => r.status === 'pass').length;
+  const failCount = results.filter((r) => r.status === 'fail').length;
+
+  console.log();
+  if (failCount === 0) {
+    printBox([pc.green(`${s.success} All checks passed`)], { borderColor: pc.green });
+  } else {
+    printBox([pc.red(`${s.error} ${failCount} check(s) failed`)], { borderColor: pc.red });
+  }
+  console.log();
 }

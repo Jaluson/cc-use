@@ -13,10 +13,21 @@ import { editCommand } from './commands/edit.js';
 import { rollbackCommand } from './commands/rollback.js';
 import { exportCommand } from './commands/export.js';
 import { importFromCcSwitchCommand } from './commands/import-from-cc-switch.js';
+import { printBox, s } from './ui/index.js';
 import type { ValidateLevel } from './core/types.js';
 
 function handleError(error: unknown): never {
-  console.error(pc.red(`Error: ${error instanceof Error ? error.message : String(error)}`));
+  const message = error instanceof Error ? error.message : String(error);
+  console.error();
+  printBox(
+    [
+      pc.red(pc.bold(`${s.error} Error`)),
+      '',
+      pc.red(message),
+    ],
+    { borderColor: pc.red },
+  );
+  console.error();
   process.exit(1);
 }
 
@@ -25,7 +36,7 @@ const program = new Command();
 program
   .name('cc-use')
   .description('Claude Code Provider Runtime Management CLI')
-  .version('0.1.3', '-v, --version');
+  .version('0.1.4', '-v, --version');
 
 program
   .command('use <profile>')

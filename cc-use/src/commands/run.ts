@@ -1,11 +1,12 @@
 import { existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { join } from 'node:path';
-import pc from 'picocolors';
 import { useCommand } from './use.js';
 import { loadProfile } from '../core/profile.js';
 import { loadPreset } from '../core/preset.js';
 import { restoreBackup } from '../core/atomic-write.js';
+import { printCommandHeader, success, warning } from '../ui/index.js';
+import pc from 'picocolors';
 
 export async function runCommand(
   profileLabel: string,
@@ -21,7 +22,10 @@ export async function runCommand(
   try {
     await useCommand(profileLabel, cwd);
 
-    console.log(pc.blue('Launching Claude...'));
+    printCommandHeader('Launch Claude', `Profile: ${profileLabel}`);
+    console.log(pc.dim('  Starting Claude Code...'));
+    console.log();
+
     const claude = spawn('claude', claudeArgs, {
       stdio: 'inherit',
       cwd,
@@ -35,7 +39,7 @@ export async function runCommand(
   } catch (error) {
     if (existsSync(backupPath)) {
       await restoreBackup(settingsPath, backupPath);
-      console.log(pc.yellow(`✓ Restored previous ${configFileName}`));
+      warning(`Restored previous ${configFileName}`);
     }
     throw error;
   }

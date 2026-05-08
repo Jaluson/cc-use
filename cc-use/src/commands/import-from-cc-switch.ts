@@ -1,4 +1,3 @@
-import pc from 'picocolors';
 import prompts from 'prompts';
 import { readCcSwitchProviders } from '../core/cc-switch-reader.js';
 import {
@@ -10,6 +9,8 @@ import {
   listProfiles,
   profileExists,
 } from '../core/profile.js';
+import { printCommandHeader, success, warning, printTable, s } from '../ui/index.js';
+import pc from 'picocolors';
 
 export interface ImportOptions {
   dryRun?: boolean;
@@ -21,7 +22,7 @@ export async function importFromCcSwitchCommand(
   const providers = await readCcSwitchProviders();
 
   if (providers.length === 0) {
-    console.log(pc.yellow('未找到用于 Claude Code 的 provider'));
+    warning('No Claude Code providers found');
     return;
   }
 
@@ -31,30 +32,41 @@ export async function importFromCcSwitchCommand(
     profile: buildProfile(mapProviderToProfile(p)),
   }));
 
+  printCommandHeader('Import from CC Switch', `${providers.length} provider(s) found`);
+
   // Show preview
-  console.log(pc.blue(`找到 ${providers.length} 个 Claude Code provider：`));
-  for (const item of mapped) {
-    console.log(`  - ${item.profile.label} (${item.profile.preset})`);
-  }
+  printTable(
+    [
+      { key: 'label', header: 'Profile', width: 20 },
+      { key: 'preset', header: 'Preset', width: 16 },
+    ],
+    mapped.map((m) => ({
+      label: pc.white(m.profile.label),
+      preset: pc.cyan(m.profile.preset),
+    })),
+    { compact: true },
+  );
 
   if (options.dryRun) {
-    console.log(pc.blue('\n[Preview] 将要导入以下 profile：'));
+    console.log();
+    console.log(pc.blue(`${s.info} Preview — profiles to be imported:`));
     console.log(JSON.stringify(mapped.map((m) => m.profile), null, 2));
+    console.log();
     return;
   }
 
-  // Always ask import mode
+  // Ask import mode
   const modeResponse = await prompts({
     type: 'select',
     name: 'mode',
-    message: '请选择导入模式：',
+    message: 'Select import mode:',
     choices: [
-      { title: '全部导入', value: 'all' },
-      { title: '逐个确认', value: 'confirm' },
+      { title: 'Import all', value: 'all' },
+      { title: 'Confirm one by one', value: 'confirm' },
     ],
   });
   if (!modeResponse.mode) {
-    console.log(pc.yellow('已取消'));
+    warning('Cancelled');
     return;
   }
   const mode = modeResponse.mode as 'all' | 'confirm';
@@ -67,14 +79,13 @@ export async function importFromCcSwitchCommand(
     const exists = await profileExists(profile.label);
 
     if (mode === 'confirm') {
-      // Ask for each provider
       const confirmResponse = await prompts({
         type: 'select',
         name: 'action',
-        message: `导入 "${profile.label}" (${profile.preset})？`,
+        message: `Import "${profile.label}" (${profile.preset})?`,
         choices: [
-          { title: '导入', value: 'import' },
-          { title: '跳过', value: 'skip' },
+          { title: 'Import', value: 'import' },
+          { title: 'Skip', value: 'skip' },
         ],
       });
       if (!confirmResponse.action || confirmResponse.action === 'skip') {
@@ -84,15 +95,14 @@ export async function importFromCcSwitchCommand(
     }
 
     if (exists) {
-      // Always ask when conflicting, regardless of mode
       const actionResponse = await prompts({
         type: 'select',
         name: 'action',
-        message: `Profile "${profile.label}" 已存在，请选择操作：`,
+        message: `Profile "${profile.label}" already exists:`,
         choices: [
-          { title: '覆盖', value: 'overwrite' },
-          { title: '跳过', value: 'skip' },
-          { title: '重命名', value: 'rename' },
+          { title: 'Overwrite', value: 'overwrite' },
+          { title: 'Skip', value: 'skip' },
+          { title: 'Rename', value: 'rename' },
         ],
       });
 
@@ -105,9 +115,9 @@ export async function importFromCcSwitchCommand(
         const nameResponse = await prompts({
           type: 'text',
           name: 'newName',
-          message: '请输入新名称：',
+          message: 'New name:',
           validate: (value: string) =>
-            value.trim().length > 0 ? true : '名称不能为空',
+            value.trim().length > 0 ? true : 'Name cannot be empty',
         });
         if (!nameResponse.newName) {
           skipped++;
@@ -118,11 +128,11 @@ export async function importFromCcSwitchCommand(
     }
 
     await saveProfile(profile);
-    console.log(pc.green(`  ✓ 已导入 "${profile.label}"`));
+    success(`Imported "${profile.label}"`);
     imported++;
   }
 
-  console.log(
-    pc.blue(`\n导入完成：成功 ${imported} 个，跳过 ${skipped} 个`),
-  );
+  console.log();
+  console.log(pc.dim(`  Imported: ${imported}, Skipped: ${skipped}`));
+  console.log();
 }

@@ -1,5 +1,6 @@
 import { loadProfile } from '../core/profile.js';
 import { loadPreset } from '../core/preset.js';
+import { printCommandHeader, printKeyValue, printBox, s } from '../ui/index.js';
 import pc from 'picocolors';
 
 export async function showCommand(profileLabel: string): Promise<void> {
@@ -10,16 +11,38 @@ export async function showCommand(profileLabel: string): Promise<void> {
 
   const preset = await loadPreset(profile.preset);
 
-  console.log(pc.bold(`Profile: ${profile.label}`));
-  console.log(`  Preset: ${profile.preset}`);
-  console.log(`  Version: ${profile.version}`);
+  printCommandHeader('Profile Details');
+
+  const infoItems = [
+    { key: 'Label', value: profile.label },
+    { key: 'Preset', value: profile.preset },
+    { key: 'Version', value: String(profile.version) },
+    { key: 'Preset Version', value: String(profile.presetVersion) },
+  ];
+
   if (profile.configFileName) {
-    console.log(`  Config file: ${profile.configFileName}`);
+    infoItems.push({ key: 'Config File', value: profile.configFileName });
   }
-  console.log(pc.bold('Environment:'));
-  for (const [key, value] of Object.entries(profile.env)) {
+
+  printKeyValue(infoItems);
+
+  console.log();
+
+  // Environment variables
+  const envItems = Object.entries(profile.env).map(([key, value]) => {
     const isSecret = preset?.env[key]?.secret || false;
-    const display = isSecret ? '****' : value;
-    console.log(`  ${key}: ${display}`);
+    return {
+      key,
+      value: isSecret ? '****' : value,
+      secret: isSecret,
+    };
+  });
+
+  if (envItems.length > 0) {
+    console.log(pc.cyan(pc.bold(`${s.chevron} Environment Variables`)));
+    console.log(pc.dim('  ' + '─'.repeat(30)));
+    printKeyValue(envItems);
   }
+
+  console.log();
 }

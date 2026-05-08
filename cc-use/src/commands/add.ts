@@ -1,9 +1,10 @@
 import prompts from 'prompts';
-import pc from 'picocolors';
 import ora from 'ora';
 import { getAllPresets } from '../core/preset.js';
 import { saveProfile, profileExists } from '../core/profile.js';
 import { discoverModels } from '../core/model-discovery.js';
+import { printCommandHeader, success, printBox, s } from '../ui/index.js';
+import pc from 'picocolors';
 import type { Profile, Preset } from '../core/types.js';
 
 export async function addCommand(
@@ -11,15 +12,20 @@ export async function addCommand(
 ): Promise<void> {
   const presets = await getAllPresets();
 
+  printCommandHeader('Create New Profile');
+
   let presetId = options.preset;
   if (!presetId) {
     const { selected } = await prompts({
       type: 'select',
       name: 'selected',
-      message: 'Select Provider Preset:',
-      choices: presets.map((p) => ({ title: p.label, value: p.id })),
+      message: 'Select a provider preset:',
+      choices: presets.map((p) => ({ title: `${p.label} ${pc.dim(`(${p.id})`)}`, value: p.id })),
     });
-    if (!selected) return;
+    if (!selected) {
+      console.log(pc.yellow(`${s.warning} Cancelled`));
+      return;
+    }
     presetId = selected;
   }
 
@@ -28,19 +34,25 @@ export async function addCommand(
     throw new Error(`Preset "${presetId}" not found`);
   }
 
+  console.log(pc.cyan(`${s.chevron} Selected preset: ${pc.bold(preset.label)}`));
+  console.log();
+
   let profileName: string = options.profile || '';
   if (!profileName) {
     const { name } = await prompts({
       type: 'text',
       name: 'name',
-      message: 'Enter profile name:',
+      message: 'Profile name:',
       initial: preset.id,
       validate: (value: string) => {
         if (!value) return 'Name cannot be empty';
         return true;
       },
     });
-    if (!name) return;
+    if (!name) {
+      console.log(pc.yellow(`${s.warning} Cancelled`));
+      return;
+    }
     profileName = name as string;
   }
 
@@ -50,23 +62,31 @@ export async function addCommand(
       name: 'overwrite',
       message: `Profile "${profileName}" already exists. Overwrite?`,
       choices: [
-        { title: 'No', value: false },
-        { title: 'Yes', value: true },
+        { title: 'No, cancel', value: false },
+        { title: 'Yes, overwrite', value: true },
       ],
       initial: 0,
     });
-    if (!overwrite) return;
+    if (!overwrite) {
+      console.log(pc.yellow(`${s.warning} Cancelled`));
+      return;
+    }
   }
 
+  // Collect environment variables
   const envValues: Record<string, string> = {};
   for (const [key, template] of Object.entries(preset.env)) {
     const defaultValue = template.value || '';
     const isSecret = template.secret || false;
 
+    const messageParts = [key];
+    if (template.description) messageParts.push(pc.dim(`(${template.description})`));
+    if (defaultValue) messageParts.push(pc.dim(`[default: ${defaultValue}]`));
+
     const { value } = await prompts({
       type: isSecret ? 'password' : 'text',
       name: 'value',
-      message: `${key}${template.description ? ` (${template.description})` : ''}${defaultValue ? ` (default: ${defaultValue})` : ''}:`,
+      message: messageParts.join(' ') + ':',
       initial: defaultValue,
       validate: (input: string) => {
         if (!defaultValue && !input) return 'This field is required';
@@ -74,13 +94,22 @@ export async function addCommand(
       },
     });
 
-    if (value === undefined) return;
+    if (value === undefined) {
+      console.log(pc.yellow(`${s.warning} Cancelled`));
+      return;
+    }
     envValues[key] = value || defaultValue;
   }
 
+  // Model mapping
   if (preset.modelRoles && preset.modelRoles.length > 0) {
+    console.log();
+    console.log(pc.cyan(pc.bold(`${s.chevron} Model Configuration`)));
     const completed = await promptModelMapping(preset, envValues);
-    if (!completed) return;
+    if (!completed) {
+      console.log(pc.yellow(`${s.warning} Cancelled`));
+      return;
+    }
   }
 
   const profile: Profile = {
@@ -93,7 +122,10 @@ export async function addCommand(
   };
 
   await saveProfile(profile);
-  console.log(pc.green(`✓ Profile [${profileName}] saved`));
+  console.log();
+  success(`Profile "${profileName}" saved`);
+  console.log(pc.dim(`  Use "cc-use use ${profileName}" to activate`));
+  console.log();
 }
 
 async function promptModelMapping(
@@ -124,14 +156,14 @@ async function promptModelMapping(
     }
   }
 
-  // Only use recommended models when remote discovery was not attempted (not supported or missing credentials)
+  // Only use recommended models when remote discovery was not attempted
   if (models.length === 0 && !discoveryFailed && preset.recommendedModels) {
     models = preset.recommendedModels;
   }
 
   if (models.length === 0) {
     if (discoveryFailed) {
-      console.log(pc.yellow(`⚠ Failed to fetch model list: ${discoveryError || 'Unknown error'}`));
+      console.log(pc.yellow(`${s.warning} Failed to fetch model list: ${discoveryError || 'Unknown error'}`));
       const { action } = await prompts({
         type: 'select',
         name: 'action',
@@ -154,7 +186,7 @@ async function promptModelMapping(
     message: 'Use the same model for all roles?',
     choices: [
       { title: 'Yes', value: true },
-      { title: 'No', value: false },
+      { title: 'No, configure per role', value: false },
     ],
     initial: 0,
   });
@@ -212,7 +244,7 @@ async function promptManualModels(
     message: 'Use the same model for all roles?',
     choices: [
       { title: 'Yes', value: true },
-      { title: 'No', value: false },
+      { title: 'No, configure per role', value: false },
     ],
     initial: 0,
   });

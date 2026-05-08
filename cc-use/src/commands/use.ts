@@ -8,6 +8,7 @@ import { renderSettings } from '../core/renderer.js';
 import { atomicWrite, cleanupBackup } from '../core/atomic-write.js';
 import { createMetadata, writeMetadata, readMetadata } from '../core/metadata.js';
 import { checkGitSafety } from '../core/git-safety.js';
+import { printCommandHeader, success, warning, printBox, printKeyValue, s } from '../ui/index.js';
 
 export interface UseOptions {
   dryRun?: boolean;
@@ -53,7 +54,9 @@ export async function useCommand(
   const { settings, managedEnvKeys } = await renderSettings(profile, preset, cwd, configFileName);
 
   if (options.dryRun) {
+    printCommandHeader('Dry Run', `Profile: ${profileLabel}`);
     console.log(JSON.stringify(settings, null, 2));
+    console.log();
     return;
   }
 
@@ -72,11 +75,28 @@ export async function useCommand(
     await cleanupBackup(result.backupPath);
   }
 
+  printCommandHeader('Profile Applied', profileLabel);
+
+  printKeyValue([
+    { key: 'Preset', value: preset.label },
+    { key: 'Config File', value: `.claude/${configFileName}` },
+    { key: 'Managed Keys', value: String(managedEnvKeys.length) },
+  ]);
+
   const gitSafety = await checkGitSafety(cwd);
   if (!gitSafety.isIgnored) {
-    console.log(pc.yellow(`⚠ .claude/${configFileName} contains credentials`));
-    console.log(pc.yellow('⚠ .claude/ is not ignored by git'));
+    console.log();
+    printBox(
+      [
+        pc.yellow(`${s.warning} .claude/${configFileName} contains credentials`),
+        pc.yellow(`${s.warning} .claude/ is not ignored by git`),
+      ],
+      { borderColor: pc.yellow },
+    );
   }
 
-  console.log(pc.green(`✓ Profile "${profileLabel}" applied`));
+  console.log();
+  success(`Profile "${profileLabel}" is now active`);
+  console.log(pc.dim(`  Run "claude" to start with this configuration`));
+  console.log();
 }

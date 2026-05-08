@@ -1,9 +1,10 @@
 import prompts from 'prompts';
-import pc from 'picocolors';
 import ora from 'ora';
 import { loadProfile, saveProfile, profileExists } from '../core/profile.js';
 import { loadPreset } from '../core/preset.js';
 import { discoverModels } from '../core/model-discovery.js';
+import { printCommandHeader, success, warning, s } from '../ui/index.js';
+import pc from 'picocolors';
 import type { Preset } from '../core/types.js';
 
 export async function editCommand(profileLabel: string): Promise<void> {
@@ -17,15 +18,17 @@ export async function editCommand(profileLabel: string): Promise<void> {
     throw new Error(`Preset "${profile.preset}" not found`);
   }
 
-  console.log(pc.bold(`Editing profile: ${profileLabel}`));
+  printCommandHeader(`Edit Profile`, profileLabel);
   console.log(pc.dim('Leave blank to keep current value'));
+  console.log();
 
   // Edit profile label (name)
   const originalLabel = profile.label;
   const { newLabel } = await prompts({
     type: 'text',
     name: 'newLabel',
-    message: `Profile name [${profile.label}]:`,
+    message: 'Profile name:',
+    initial: profile.label,
   });
   if (newLabel !== undefined && newLabel !== '' && newLabel !== profile.label) {
     if (await profileExists(newLabel)) {
@@ -42,7 +45,7 @@ export async function editCommand(profileLabel: string): Promise<void> {
     const { value } = await prompts({
       type: isSecret ? 'password' : 'text',
       name: 'value',
-      message: `${key} [${isSecret ? '****' : currentValue}]:`,
+      message: `${key} ${pc.dim(`[${isSecret ? '****' : currentValue}]`)}:`,
     });
 
     if (value !== undefined && value !== '') {
@@ -52,13 +55,14 @@ export async function editCommand(profileLabel: string): Promise<void> {
 
   // Edit model mapping
   if (preset.modelRoles && preset.modelRoles.length > 0) {
+    console.log();
     const { editModels } = await prompts({
       type: 'select',
       name: 'editModels',
       message: 'Modify model mapping?',
       choices: [
-        { title: 'No', value: false },
-        { title: 'Yes', value: true },
+        { title: 'No, keep current', value: false },
+        { title: 'Yes, reconfigure', value: true },
       ],
       initial: 0,
     });
@@ -69,7 +73,9 @@ export async function editCommand(profileLabel: string): Promise<void> {
   }
 
   await saveProfile(profile, originalLabel);
-  console.log(pc.green(`✓ Profile "${profile.label}" updated`));
+  console.log();
+  success(`Profile "${profile.label}" updated`);
+  console.log();
 }
 
 async function editModelMapping(
@@ -94,8 +100,9 @@ async function editModelMapping(
     models = preset.recommendedModels;
   }
 
+  console.log(pc.cyan(pc.bold(`${s.chevron} Model Configuration`)));
+
   if (models.length > 0) {
-    // Select mode
     for (const role of preset.modelRoles) {
       const envKey = preset.modelEnvMapping[role];
       if (!envKey) continue;
@@ -104,9 +111,9 @@ async function editModelMapping(
       const { model } = await prompts({
         type: 'select',
         name: 'model',
-        message: `${role} Model [${current}]:`,
+        message: `${role} Model:`,
         choices: [
-          { title: `(keep: ${current})`, value: current },
+          { title: `${pc.dim('Keep current:')} ${current}`, value: current },
           ...models.map((m) => ({ title: m, value: m })),
         ],
       });
@@ -124,7 +131,7 @@ async function editModelMapping(
       const { model } = await prompts({
         type: 'text',
         name: 'model',
-        message: `${role} Model [${current}]:`,
+        message: `${role} Model ${pc.dim(`[${current}]`)}:`,
       });
       if (model !== undefined && model !== '') {
         envValues[envKey] = model;
