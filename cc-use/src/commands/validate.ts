@@ -5,15 +5,22 @@ import { loadPreset } from '../core/preset.js';
 import { discoverModels } from '../core/model-discovery.js';
 import { validateProfile } from '../core/schema.js';
 import { printCommandHeader, printBox, s } from '../ui/index.js';
+import { promptProfileSelectionWithInfo } from './_interactive.js';
 import type { ValidateLevel } from '../core/types.js';
 
 export async function validateCommand(
-  profileLabel: string,
+  profileLabel: string | undefined,
   level: ValidateLevel = 'local',
 ): Promise<void> {
-  const profile = await loadProfile(profileLabel);
+  let label = profileLabel;
+  if (!label) {
+    label = await promptProfileSelectionWithInfo('Select a profile to validate:');
+    if (!label) return;
+  }
+
+  const profile = await loadProfile(label);
   if (!profile) {
-    throw new Error(`Profile "${profileLabel}" not found`);
+    throw new Error(`Profile "${label}" not found`);
   }
 
   const preset = await loadPreset(profile.preset);

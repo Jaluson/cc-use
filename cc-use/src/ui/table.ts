@@ -88,7 +88,7 @@ export function drawTable(
 
   const lines: string[] = [];
 
-  // Top border
+  // Top border with subtle styling
   let top = borderColor(tbl.tl);
   for (let i = 0; i < colWidths.length; i++) {
     top += borderColor(tbl.h.repeat(colWidths[i]));
@@ -97,12 +97,12 @@ export function drawTable(
   top += borderColor(tbl.tr);
   lines.push(top);
 
-  // Header row
+  // Header row with bold styling
   let header = borderColor(tbl.v);
   for (let i = 0; i < columns.length; i++) {
     const col = columns[i];
     const w = colWidths[i];
-    const text = formatCell(pc.bold(col.header), w, 'left');
+    const text = formatCell(pc.bold(pc.cyan(col.header)), w, 'left');
     header += text + borderColor(tbl.v);
   }
   lines.push(header);
@@ -116,8 +116,8 @@ export function drawTable(
   sep += borderColor(tbl.rJoin);
   lines.push(sep);
 
-  // Data rows
-  for (const row of rows) {
+  // Data rows with alternating subtle background
+  rows.forEach((row, rowIndex) => {
     let line = borderColor(tbl.v);
     for (let i = 0; i < columns.length; i++) {
       const col = columns[i];
@@ -129,7 +129,7 @@ export function drawTable(
       line += text + borderColor(tbl.v);
     }
     lines.push(line);
-  }
+  });
 
   // Bottom border
   let bottom = borderColor(tbl.bl);

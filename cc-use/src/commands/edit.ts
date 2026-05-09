@@ -4,13 +4,20 @@ import { loadProfile, saveProfile, profileExists } from '../core/profile.js';
 import { loadPreset } from '../core/preset.js';
 import { discoverModels } from '../core/model-discovery.js';
 import { printCommandHeader, success, warning, s } from '../ui/index.js';
+import { promptProfileSelectionWithInfo } from './_interactive.js';
 import pc from 'picocolors';
 import type { Preset } from '../core/types.js';
 
-export async function editCommand(profileLabel: string): Promise<void> {
-  const profile = await loadProfile(profileLabel);
+export async function editCommand(profileLabel: string | undefined): Promise<void> {
+  let label = profileLabel;
+  if (!label) {
+    label = await promptProfileSelectionWithInfo('Select a profile to edit:');
+    if (!label) return;
+  }
+
+  const profile = await loadProfile(label);
   if (!profile) {
-    throw new Error(`Profile "${profileLabel}" not found`);
+    throw new Error(`Profile "${label}" not found`);
   }
 
   const preset = await loadPreset(profile.preset);

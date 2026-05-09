@@ -121,6 +121,35 @@ export async function addCommand(
     configFileName: preset.configFileName,
   };
 
+  // Review step before saving
+  console.log();
+  console.log(pc.cyan(pc.bold(`${s.chevron} Review Profile`)));
+  console.log(pc.dim('  ' + '─'.repeat(30)));
+  console.log(`  ${pc.bold('Name:')}    ${profileName}`);
+  console.log(`  ${pc.bold('Preset:')}  ${preset.label}`);
+  for (const [key, value] of Object.entries(envValues)) {
+    const isSecret = preset.env[key]?.secret;
+    const displayValue = isSecret ? pc.dim('****') : pc.white(value);
+    console.log(`  ${pc.bold(key + ':')}  ${displayValue}`);
+  }
+  console.log();
+
+  const { confirmSave } = await prompts({
+    type: 'select',
+    name: 'confirmSave',
+    message: 'Save this profile?',
+    choices: [
+      { title: 'Cancel', value: false },
+      { title: pc.green('Yes, save'), value: true },
+    ],
+    initial: 1,
+  });
+
+  if (!confirmSave) {
+    console.log(pc.yellow(`${s.warning} Cancelled`));
+    return;
+  }
+
   await saveProfile(profile);
   console.log();
   success(`Profile "${profileName}" saved`);

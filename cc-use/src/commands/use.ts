@@ -9,21 +9,28 @@ import { atomicWrite, cleanupBackup } from '../core/atomic-write.js';
 import { createMetadata, writeMetadata, readMetadata } from '../core/metadata.js';
 import { checkGitSafety } from '../core/git-safety.js';
 import { printCommandHeader, success, warning, printBox, printKeyValue, s } from '../ui/index.js';
+import { promptProfileSelection, promptConfirm } from './_interactive.js';
 
 export interface UseOptions {
   dryRun?: boolean;
 }
 
 export async function useCommand(
-  profileLabel: string,
+  profileLabel: string | undefined,
   cwd: string = process.cwd(),
   options: UseOptions = {},
 ): Promise<void> {
-  const profile = await loadProfile(profileLabel);
+  let label = profileLabel;
+  if (!label) {
+    label = await promptProfileSelection('Select a profile to activate:');
+    if (!label) return;
+  }
+
+  const profile = await loadProfile(label);
   if (!profile) {
     const candidates = await listProfiles();
-    const similar = await findSimilarProfiles(profileLabel, candidates);
-    let msg = `Profile "${profileLabel}" not found`;
+    const similar = await findSimilarProfiles(label, candidates);
+    let msg = `Profile "${label}" not found`;
     if (similar.length > 0) {
       msg += `\nDid you mean: ${similar.join(', ')}?`;
     }
@@ -42,6 +49,18 @@ export async function useCommand(
 
   const configFileName = profile.configFileName || preset.configFileName || 'settings.json';
   const settingsPath = join(claudeDir, configFileName);
+
+  // Confirm before overwriting existing settings
+  if (!options.dryRun && existsSync(settingsPath)) {
+    const confirmed = await promptConfirm(
+      `Overwrite existing .claude/${configFileName}?`,
+      true,
+    );
+    if (!confirmed) {
+      console.log(pc.yellow(`${s.warning} Cancelled`));
+      return;
+    }
+  }
 
   // Save original backup on first use
   const originalPath = `${settingsPath}.original`;

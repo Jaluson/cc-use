@@ -94,10 +94,94 @@ export function drawBox(lines: string[], options: BoxOptions = {}): string[] {
 }
 
 /**
+ * Draw a double-line bordered box around content lines.
+ */
+export function drawDoubleBox(lines: string[], options: BoxOptions = {}): string[] {
+  const {
+    title,
+    padding = 1,
+    borderColor = pc.gray,
+    titleColor = (text: string) => pc.bold(pc.cyan(text)),
+  } = options;
+
+  const doubleBox = {
+    h: '═',
+    v: '║',
+    tl: '╔',
+    tr: '╗',
+    bl: '╚',
+    br: '╝',
+  };
+
+  let contentWidth = 0;
+  for (const line of lines) {
+    const visibleLen = stripAnsi(line).length;
+    if (visibleLen > contentWidth) contentWidth = visibleLen;
+  }
+
+  const innerWidth = contentWidth + padding * 2;
+  const result: string[] = [];
+
+  // Top border
+  if (title) {
+    const titleStr = ` ${title} `;
+    const titleLen = stripAnsi(titleStr).length;
+    const leftPad = Math.floor((innerWidth - titleLen) / 2);
+    const rightPad = innerWidth - titleLen - leftPad;
+    result.push(
+      borderColor(doubleBox.tl) +
+      borderColor(doubleBox.h.repeat(leftPad)) +
+      titleColor(titleStr) +
+      borderColor(doubleBox.h.repeat(rightPad)) +
+      borderColor(doubleBox.tr),
+    );
+  } else {
+    result.push(borderColor(doubleBox.tl + doubleBox.h.repeat(innerWidth) + doubleBox.tr));
+  }
+
+  // Padding top
+  for (let i = 0; i < padding; i++) {
+    result.push(borderColor(doubleBox.v) + ' '.repeat(innerWidth) + borderColor(doubleBox.v));
+  }
+
+  // Content lines
+  for (const line of lines) {
+    const visibleLen = stripAnsi(line).length;
+    const rightPad = innerWidth - visibleLen - padding;
+    result.push(
+      borderColor(doubleBox.v) +
+      ' '.repeat(padding) +
+      line +
+      ' '.repeat(Math.max(0, rightPad)) +
+      borderColor(doubleBox.v),
+    );
+  }
+
+  // Padding bottom
+  for (let i = 0; i < padding; i++) {
+    result.push(borderColor(doubleBox.v) + ' '.repeat(innerWidth) + borderColor(doubleBox.v));
+  }
+
+  // Bottom border
+  result.push(borderColor(doubleBox.bl + doubleBox.h.repeat(innerWidth) + doubleBox.br));
+
+  return result;
+}
+
+/**
  * Print a bordered box to stdout.
  */
 export function printBox(lines: string[], options?: BoxOptions): void {
   for (const line of drawBox(lines, options)) {
+    console.log(line);
+  }
+}
+
+/**
+ * Print a double-line bordered box to stdout.
+ */
+export function printDoubleBox(lines: string[], options?: BoxOptions): void {
+  for (const line of drawDoubleBox(lines, options)) {
     console.log(line);
   }
 }

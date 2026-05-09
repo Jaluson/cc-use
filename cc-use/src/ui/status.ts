@@ -2,15 +2,15 @@ import pc from 'picocolors';
 import { s } from './symbols.js';
 
 export function success(message: string): void {
-  console.log(pc.green(`${s.success} ${message}`));
+  console.log(pc.green(`${s.success} ${pc.bold(message)}`));
 }
 
 export function error(message: string): void {
-  console.log(pc.red(`${s.error} ${message}`));
+  console.log(pc.red(`${s.error} ${pc.bold(message)}`));
 }
 
 export function warning(message: string): void {
-  console.log(pc.yellow(`${s.warning} ${message}`));
+  console.log(pc.yellow(`${s.warning} ${pc.bold(message)}`));
 }
 
 export function info(message: string): void {

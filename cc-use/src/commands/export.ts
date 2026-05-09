@@ -3,15 +3,22 @@ import { loadPreset } from '../core/preset.js';
 import { sanitizeProfileForExport } from '../core/export.js';
 import { writeFile } from 'node:fs/promises';
 import { printCommandHeader, success, printBox } from '../ui/index.js';
+import { promptProfileSelectionWithInfo } from './_interactive.js';
 import pc from 'picocolors';
 
 export async function exportCommand(
-  profileLabel: string,
+  profileLabel: string | undefined,
   options: { output?: string } = {},
 ): Promise<void> {
-  const profile = await loadProfile(profileLabel);
+  let label = profileLabel;
+  if (!label) {
+    label = await promptProfileSelectionWithInfo('Select a profile to export:');
+    if (!label) return;
+  }
+
+  const profile = await loadProfile(label);
   if (!profile) {
-    throw new Error(`Profile "${profileLabel}" not found`);
+    throw new Error(`Profile "${label}" not found`);
   }
 
   const preset = await loadPreset(profile.preset);

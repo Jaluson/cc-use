@@ -1,16 +1,19 @@
 import pc from 'picocolors';
-import { printBox } from './box.js';
+import { s } from './symbols.js';
+import { printDoubleBox } from './box.js';
 
 export function printEmptyState(
   message: string,
   hint?: string,
 ): void {
-  const lines = [pc.gray(message)];
+  const lines = [
+    pc.dim(`${s.ellipsis} ${message}`),
+  ];
   if (hint) {
     lines.push('');
-    lines.push(pc.dim(`  ${hint}`));
+    lines.push(pc.dim(`  ${s.arrow} ${hint}`));
   }
-  printBox(lines, {
+  printDoubleBox(lines, {
     borderColor: pc.dim,
     padding: 1,
   });

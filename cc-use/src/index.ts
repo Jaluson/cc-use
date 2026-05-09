@@ -13,6 +13,7 @@ import { editCommand } from './commands/edit.js';
 import { rollbackCommand } from './commands/rollback.js';
 import { exportCommand } from './commands/export.js';
 import { importFromCcSwitchCommand } from './commands/import-from-cc-switch.js';
+import { promptProfileSelection } from './commands/_interactive.js';
 import { printBox, s } from './ui/index.js';
 import type { ValidateLevel } from './core/types.js';
 
@@ -39,19 +40,19 @@ program
   .version('0.1.4', '-v, --version');
 
 program
-  .command('use <profile>')
+  .command('use [profile]')
   .description('Render settings.json for a profile without launching Claude')
   .option('--dry-run', 'Preview the rendered settings.json without writing')
-  .action(async (profileLabel: string, options: { dryRun?: boolean }) => {
+  .action(async (profileLabel: string | undefined, options: { dryRun?: boolean }) => {
     try { await useCommand(profileLabel, process.cwd(), { dryRun: options.dryRun }); }
     catch (error) { handleError(error); }
   });
 
 program
-  .command('run <profile>')
+  .command('run [profile]')
   .description('Render settings.json and launch Claude')
   .allowUnknownOption()
-  .action(async (profileLabel: string, _options: unknown, command: Command) => {
+  .action(async (profileLabel: string | undefined, _options: unknown, command: Command) => {
     try {
       const rawArgs = command.args.slice(1);
       const separatorIndex = rawArgs.indexOf('--');
@@ -97,17 +98,17 @@ program
   });
 
 program
-  .command('show <profile>')
+  .command('show [profile]')
   .description('Show profile details')
-  .action(async (profile: string) => {
+  .action(async (profile: string | undefined) => {
     try { await showCommand(profile); }
     catch (error) { handleError(error); }
   });
 
 program
-  .command('edit <profile>')
+  .command('edit [profile]')
   .description('Edit an existing profile')
-  .action(async (profile: string) => {
+  .action(async (profile: string | undefined) => {
     try { await editCommand(profile); }
     catch (error) { handleError(error); }
   });
@@ -138,11 +139,11 @@ program
   });
 
 program
-  .command('validate <profile>')
+  .command('validate [profile]')
   .description('Validate profile configuration')
   .option('--online', 'Include network connectivity checks')
   .option('--discovery', 'Include model discovery checks')
-  .action(async (profile: string, options: { online?: boolean; discovery?: boolean }) => {
+  .action(async (profile: string | undefined, options: { online?: boolean; discovery?: boolean }) => {
     try {
       let level: ValidateLevel = 'local';
       if (options.discovery) level = 'discovery';
@@ -152,10 +153,10 @@ program
   });
 
 program
-  .command('export <profile>')
+  .command('export [profile]')
   .description('Export a profile for sharing (secrets are masked)')
   .option('-o, --output <file>', 'Output file path')
-  .action(async (profile: string, options: { output?: string }) => {
+  .action(async (profile: string | undefined, options: { output?: string }) => {
     try { await exportCommand(profile, options); }
     catch (error) { handleError(error); }
   });

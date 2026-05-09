@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import pc from 'picocolors';
 import type { Metadata, SettingsJson } from '../core/types.js';
 import { printCommandHeader, success, warning, printBox, s } from '../ui/index.js';
+import { promptConfirm } from './_interactive.js';
 
 export async function rollbackCommand(cwd: string = process.cwd()): Promise<void> {
   const claudeDir = join(cwd, '.claude');
@@ -29,6 +30,12 @@ export async function rollbackCommand(cwd: string = process.cwd()): Promise<void
   }
 
   printCommandHeader('Rollback', `Profile: ${meta.profile}`);
+
+  const confirmed = await promptConfirm('Rollback will restore previous settings. Continue?', true);
+  if (!confirmed) {
+    console.log(pc.yellow(`${s.warning} Cancelled`));
+    return;
+  }
 
   const configFileName = meta.configFileName || 'settings.json';
   const settingsPath = join(claudeDir, configFileName);
