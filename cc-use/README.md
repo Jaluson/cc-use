@@ -6,19 +6,17 @@
 
 ## English
 
+[![npm version](https://img.shields.io/npm/v/@jaluson/cc-use.svg)](https://www.npmjs.com/package/@jaluson/cc-use)
+
 Claude Code Provider Runtime Management CLI — Quickly switch between multiple API provider configurations.
-
-### What's New in v0.1.4
-
-- **Import from CC Switch** — Seamlessly migrate all your provider configurations from the CC Switch extension
-- **Redesigned CLI UI** — Industrial-precision visual style with bordered tables, panels, and consistent iconography
 
 ### Features
 
 - **Profile Management** — Create, edit, delete, and list multiple provider profiles
-- **Built-in Presets** — Support for Anthropic, Kimi, OpenRouter, DeepSeek, and other common providers
+- **Built-in Presets** — Support for Anthropic, Kimi, OpenRouter, DeepSeek, Qwen, Aliyun Bailian, Zhipu, MiniMax, xiaomimimo, Moonshot and more
 - **One-click Switch** — Render `.claude/settings.json` and automatically inject environment variables
 - **Launch Integration** — Switch profile and directly launch Claude Code
+- **Default Config** — Set default profile and default Claude Code args via `config` command
 - **Safe Cleanup** — Auto backup original config, `rollback` command to restore
 - **Import from CC Switch** — One-command migration from CC Switch extension configurations
 - **Model Discovery** — Auto-fetch available models from remote API endpoints
@@ -33,6 +31,10 @@ npm install -g @jaluson/cc-use
 
 Requires Node.js >= 20.0.0.
 
+### Quick Start
+
+See [QUICK_START.md](../QUICK_START.md) for a step-by-step guide.
+
 ### Usage
 
 ```bash
@@ -45,7 +47,7 @@ cc-use use <profile> --dry-run    # Preview without writing
 
 # Render and launch Claude (can passthrough args)
 cc-use run <profile> [claude-args...]
-cc-use run <profile> -- [claude-args...]
+cc-use run <profile> -- --model sonnet --verbose
 
 # Interactively create a profile
 cc-use add
@@ -66,10 +68,10 @@ cc-use remove              # Interactive multi-select mode
 # List built-in presets
 cc-use preset-list
 
-# Validate profile (optional online check and model discovery)
+# Validate profile
 cc-use validate <profile>
-cc-use validate <profile> --online
-cc-use validate <profile> --discovery
+cc-use validate <profile> --online       # Include connectivity check
+cc-use validate <profile> --discovery    # Include model discovery
 
 # Export profile (secrets are masked)
 cc-use export <profile>
@@ -80,10 +82,43 @@ cc-use import-from-cc-switch
 cc-use import-cc             # Alias
 cc-use import-cc --dry-run   # Preview without writing
 
+# Default configuration
+cc-use config                             # List all config values
+cc-use config set profile <name>          # Set default profile
+cc-use config set claudeArgs --model opus # Set default Claude args
+cc-use config get <key>                   # Get a config value
+cc-use config delete <key>                # Delete a config value
+
 # Rollback: Restore project original config
 cc-use rollback
 cc-use clean                 # Alias
 ```
+
+### Default Configuration
+
+`cc-use config` manages default values used when no explicit argument is given:
+
+| Key | Description | Example |
+|-----|-------------|---------|
+| `profile` | Default profile for `use` / `run` | `cc-use config set profile my-kimi` |
+| `claudeArgs` | Default args passed to Claude Code | `cc-use config set claudeArgs --model opus` |
+
+When both default and CLI args are provided, CLI args take precedence on conflicts. For example:
+
+```bash
+# Default: --model opus  CLI: --model sonnet
+cc-use config set claudeArgs --model opus
+cc-use run --model sonnet   # Uses --model sonnet
+```
+
+Config is stored at `~/.config/cc-use/config.json`.
+
+### How It Works
+
+1. Each profile is stored in `~/.config/cc-use/profiles/`, recording the preset ID and environment variables
+2. When `use` / `run` executes, it reads the profile and corresponding preset, then renders `.claude/settings.json`
+3. Automatically cleans up previously injected environment variables to avoid conflicts
+4. Metadata is saved in `.claude/cc-use.json` for tracking and rollback
 
 ### Migrating from CC Switch
 
@@ -104,13 +139,6 @@ The import process will:
 4. Handle name conflicts with overwrite / rename / skip options
 5. Save all profiles to `~/.config/cc-use/profiles/`
 
-### How It Works
-
-1. Each profile is stored in `~/.config/cc-use/profiles/`, recording the preset ID and environment variables
-2. When `use` / `run` executes, it reads the profile and corresponding preset, then renders `.claude/settings.json`
-3. Automatically cleans up previously injected environment variables to avoid conflicts
-4. Metadata is saved in `.claude/cc-use.json` for tracking and rollback
-
 ### Development
 
 ```bash
@@ -128,19 +156,17 @@ MIT
 
 ## 中文
 
+[![npm version](https://img.shields.io/npm/v/@jaluson/cc-use.svg)](https://www.npmjs.com/package/@jaluson/cc-use)
+
 Claude Code Provider Runtime Management CLI — 在多个 API 提供商配置之间快速切换。
-
-### v0.1.4 新特性
-
-- **从 CC Switch 导入配置** — 一键迁移 CC Switch 扩展中的所有 provider 配置
-- **全新 CLI 界面** — 工业精密工具风格，带边框表格、面板和统一图标系统
 
 ### 功能
 
 - **配置文件管理** — 创建、编辑、删除、列出多个 provider 配置（profile）
-- **内置预设** — 支持 Anthropic、Kimi、OpenRouter、DeepSeek 等常见提供商
+- **内置预设** — 支持 Anthropic、Kimi、OpenRouter、DeepSeek、通义千问、阿里百炼、智谱、MiniMax、xiaomimimo、Moonshot 等
 - **一键切换** — 渲染 `.claude/settings.json` 并自动注入环境变量
 - **启动集成** — 切换配置后直接启动 Claude Code
+- **默认配置** — 通过 `config` 命令设定默认 profile 和默认 Claude Code 参数
 - **安全清理** — 自动备份原有配置，`rollback` 命令可恢复
 - **从 CC Switch 导入** — 从 CC Switch 扩展配置一键迁移
 - **模型发现** — 从远程 API 自动获取可用模型列表
@@ -155,6 +181,10 @@ npm install -g @jaluson/cc-use
 
 需要 Node.js >= 20.0.0。
 
+### 快速开始
+
+请参阅 [QUICK_START.md](../QUICK_START.md) 获取详细步骤。
+
 ### 使用
 
 ```bash
@@ -167,7 +197,7 @@ cc-use use <profile> --dry-run    # 预览不写入
 
 # 渲染并启动 Claude（可透传参数）
 cc-use run <profile> [claude-args...]
-cc-use run <profile> -- [claude-args...]
+cc-use run <profile> -- --model sonnet --verbose
 
 # 交互式创建配置
 cc-use add
@@ -188,10 +218,10 @@ cc-use remove              # 交互式多选模式
 # 列出内置预设
 cc-use preset-list
 
-# 校验配置（可选在线检查和模型发现）
+# 校验配置
 cc-use validate <profile>
-cc-use validate <profile> --online
-cc-use validate <profile> --discovery
+cc-use validate <profile> --online       # 包含连通性检查
+cc-use validate <profile> --discovery    # 包含模型发现
 
 # 导出配置（自动脱敏）
 cc-use export <profile>
@@ -202,10 +232,36 @@ cc-use import-from-cc-switch
 cc-use import-cc             # 别名
 cc-use import-cc --dry-run   # 预览不写入
 
+# 默认配置管理
+cc-use config                             # 列出所有配置
+cc-use config set profile <name>          # 设定默认 profile
+cc-use config set claudeArgs --model opus # 设定默认 Claude 参数
+cc-use config get <key>                   # 获取配置值
+cc-use config delete <key>                # 删除配置值
+
 # 回滚：恢复项目原始配置
 cc-use rollback
 cc-use clean                 # 别名
 ```
+
+### 默认配置
+
+`cc-use config` 管理未显式指定参数时使用的默认值：
+
+| Key | 说明 | 示例 |
+|-----|------|------|
+| `profile` | `use` / `run` 的默认 profile | `cc-use config set profile my-kimi` |
+| `claudeArgs` | 默认传递给 Claude Code 的参数 | `cc-use config set claudeArgs --model opus` |
+
+当默认参数与命令行参数冲突时，命令行参数优先。例如：
+
+```bash
+# 默认: --model opus  命令行: --model sonnet
+cc-use config set claudeArgs --model opus
+cc-use run --model sonnet   # 实际使用 --model sonnet
+```
+
+配置文件存储在 `~/.config/cc-use/config.json`。
 
 ### 从 CC Switch 迁移
 

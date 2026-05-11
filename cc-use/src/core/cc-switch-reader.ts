@@ -22,7 +22,7 @@ export async function readCcSwitchProviders(
 
   if (!existsSync(path)) {
     throw new Error(
-      '未找到 cc-switch 数据库，请确认已安装并配置过 cc-switch',
+      'cc-switch database not found. Please ensure cc-switch is installed and configured.',
     );
   }
 
@@ -30,15 +30,13 @@ export async function readCcSwitchProviders(
   const db = new SQL.Database(readFileSync(path));
 
   try {
-    // Check if providers table exists
     const tables = db.exec(
       "SELECT name FROM sqlite_master WHERE type='table' AND name='providers'",
     );
     if (!tables || tables.length === 0) {
-      throw new Error('cc-switch 数据库中未找到 providers 表');
+      throw new Error('cc-switch database: providers table not found');
     }
 
-    // Query providers for Claude Code
     const providerResults = db.exec(
       "SELECT id, app_type, name, settings_config, provider_type FROM providers WHERE app_type = 'claude'",
     );
@@ -63,17 +61,20 @@ export async function readCcSwitchProviders(
         // ignore invalid JSON
       }
 
-      // Get endpoints for this provider
+      // Get endpoints for this provider using parameterized query
       const endpoints: string[] = [];
       try {
-        const endpointResults = db.exec(
-          `SELECT url FROM provider_endpoints WHERE provider_id = '${id}' AND app_type = '${appType}'`,
+        const stmt = db.prepare(
+          'SELECT url FROM provider_endpoints WHERE provider_id = ? AND app_type = ?',
         );
-        if (endpointResults && endpointResults.length > 0) {
-          for (const epRow of endpointResults[0].values) {
-            endpoints.push(epRow[0] as string);
+        stmt.bind([id, appType]);
+        while (stmt.step()) {
+          const row = stmt.getAsObject();
+          if (row.url) {
+            endpoints.push(String(row.url));
           }
         }
+        stmt.free();
       } catch {
         // provider_endpoints table may not exist or query may fail
       }
@@ -92,7 +93,7 @@ export async function readCcSwitchProviders(
     if (error instanceof Error && error.message.includes('cc-switch')) {
       throw error;
     }
-    throw new Error('cc-switch 数据库格式不兼容，可能版本过新/过旧');
+    throw new Error('cc-switch database format is incompatible, version may be too old or too new');
   } finally {
     db.close();
   }

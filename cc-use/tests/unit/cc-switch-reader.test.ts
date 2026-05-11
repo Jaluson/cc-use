@@ -15,6 +15,6 @@ describe('cc-switch-reader', () => {
     );
     await expect(
       readCcSwitchProviders('/nonexistent/path/cc-switch.db'),
-    ).rejects.toThrow('未找到 cc-switch 数据库');
+    ).rejects.toThrow('cc-switch database not found');
   });
 });

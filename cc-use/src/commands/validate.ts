@@ -63,8 +63,9 @@ export async function validateCommand(
       const spinner1 = ora('Checking endpoint...').start();
       try {
         const controller = new AbortController();
-        setTimeout(() => controller.abort(), 10000);
+        const timeout = setTimeout(() => controller.abort(), 10000);
         await fetch(baseUrl, { signal: controller.signal, method: 'HEAD' });
+        clearTimeout(timeout);
         spinner1.succeed('Endpoint reachable');
       } catch {
         spinner1.fail('Endpoint unreachable');

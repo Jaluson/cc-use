@@ -1,4 +1,5 @@
 import pc from 'picocolors';
+import { stripAnsi } from './ansi.js';
 
 export interface TableColumn {
   key: string;
@@ -16,21 +17,16 @@ export interface TableRow {
 const tbl = {
   h: '─',
   v: '│',
-  tl: '╭',
-  tr: '╮',
-  bl: '╰',
-  br: '╯',
+  tl: '┌',
+  tr: '┐',
+  bl: '└',
+  br: '┘',
   cross: '┼',
   tJoin: '┬',
   bJoin: '┴',
   lJoin: '├',
   rJoin: '┤',
 };
-
-function stripAnsi(str: string): string {
-  // eslint-disable-next-line no-control-regex
-  return str.replace(/\[[0-9;]*m/g, '');
-}
 
 function padEnd(str: string, width: number): string {
   const visibleLen = stripAnsi(str).length;
@@ -63,9 +59,6 @@ function formatCell(value: string, width: number, align: 'left' | 'right' | 'cen
   }
 }
 
-/**
- * Render a table with borders.
- */
 export function drawTable(
   columns: TableColumn[],
   rows: TableRow[],
@@ -73,7 +66,6 @@ export function drawTable(
 ): string[] {
   const { compact = false, borderColor = pc.gray } = options;
 
-  // Calculate column widths
   const colWidths = columns.map((col) => {
     const headerWidth = stripAnsi(col.header).length;
     const maxDataWidth = rows.reduce((max, row) => {
@@ -84,11 +76,8 @@ export function drawTable(
     return Math.max(headerWidth, maxDataWidth, col.width || 0) + (compact ? 1 : 2);
   });
 
-  const totalWidth = colWidths.reduce((sum, w) => sum + w, 0) + colWidths.length + 1;
-
   const lines: string[] = [];
 
-  // Top border with subtle styling
   let top = borderColor(tbl.tl);
   for (let i = 0; i < colWidths.length; i++) {
     top += borderColor(tbl.h.repeat(colWidths[i]));
@@ -97,7 +86,6 @@ export function drawTable(
   top += borderColor(tbl.tr);
   lines.push(top);
 
-  // Header row with bold styling
   let header = borderColor(tbl.v);
   for (let i = 0; i < columns.length; i++) {
     const col = columns[i];
@@ -107,7 +95,6 @@ export function drawTable(
   }
   lines.push(header);
 
-  // Header separator
   let sep = borderColor(tbl.lJoin);
   for (let i = 0; i < colWidths.length; i++) {
     sep += borderColor(tbl.h.repeat(colWidths[i]));
@@ -116,8 +103,7 @@ export function drawTable(
   sep += borderColor(tbl.rJoin);
   lines.push(sep);
 
-  // Data rows with alternating subtle background
-  rows.forEach((row, rowIndex) => {
+  rows.forEach((row) => {
     let line = borderColor(tbl.v);
     for (let i = 0; i < columns.length; i++) {
       const col = columns[i];
@@ -131,7 +117,6 @@ export function drawTable(
     lines.push(line);
   });
 
-  // Bottom border
   let bottom = borderColor(tbl.bl);
   for (let i = 0; i < colWidths.length; i++) {
     bottom += borderColor(tbl.h.repeat(colWidths[i]));
@@ -143,9 +128,6 @@ export function drawTable(
   return lines;
 }
 
-/**
- * Print a table to stdout.
- */
 export function printTable(
   columns: TableColumn[],
   rows: TableRow[],
@@ -156,9 +138,6 @@ export function printTable(
   }
 }
 
-/**
- * Render a simple key-value list (no full table, just aligned pairs).
- */
 export function drawKeyValue(
   items: { key: string; value: string; secret?: boolean }[],
   keyWidth?: number,
@@ -170,9 +149,6 @@ export function drawKeyValue(
   });
 }
 
-/**
- * Print a key-value list.
- */
 export function printKeyValue(
   items: { key: string; value: string; secret?: boolean }[],
   keyWidth?: number,

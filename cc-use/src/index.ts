@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { createRequire } from 'node:module';
 import pc from 'picocolors';
 import { useCommand } from './commands/use.js';
 import { runCommand } from './commands/run.js';
@@ -13,6 +14,8 @@ import { editCommand } from './commands/edit.js';
 import { rollbackCommand } from './commands/rollback.js';
 import { exportCommand } from './commands/export.js';
 import { importFromCcSwitchCommand } from './commands/import-from-cc-switch.js';
+import { configSetCommand, configGetCommand, configDeleteCommand, configListCommand } from './commands/config.js';
+import { getConfigValue } from './core/config.js';
 import { promptProfileSelection } from './commands/_interactive.js';
 import { printBox, s } from './ui/index.js';
 import type { ValidateLevel } from './core/types.js';
@@ -32,19 +35,25 @@ function handleError(error: unknown): never {
   process.exit(1);
 }
 
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json');
+
 const program = new Command();
 
 program
   .name('cc-use')
   .description('Claude Code Provider Runtime Management CLI')
-  .version('0.1.4', '-v, --version');
+  .version(pkg.version, '-v, --version');
 
 program
   .command('use [profile]')
   .description('Render settings.json for a profile without launching Claude')
   .option('--dry-run', 'Preview the rendered settings.json without writing')
   .action(async (profileLabel: string | undefined, options: { dryRun?: boolean }) => {
-    try { await useCommand(profileLabel, process.cwd(), { dryRun: options.dryRun }); }
+    try {
+      const profile = profileLabel ?? await getConfigValue('profile');
+      await useCommand(profile, process.cwd(), { dryRun: options.dryRun });
+    }
     catch (error) { handleError(error); }
   });
 
@@ -54,12 +63,18 @@ program
   .allowUnknownOption()
   .action(async (profileLabel: string | undefined, _options: unknown, command: Command) => {
     try {
+      const profile = profileLabel ?? await getConfigValue('profile');
       const rawArgs = command.args.slice(1);
       const separatorIndex = rawArgs.indexOf('--');
-      const claudeArgs = separatorIndex >= 0
+      const cliClaudeArgs = separatorIndex >= 0
         ? rawArgs.slice(separatorIndex + 1)
         : rawArgs;
-      await runCommand(profileLabel, claudeArgs);
+      const defaultClaudeArgs = await getConfigValue('claudeArgs');
+      const defaultArray = Array.isArray(defaultClaudeArgs) ? defaultClaudeArgs : defaultClaudeArgs ? splitArgs(defaultClaudeArgs) : [];
+      const claudeArgs = defaultArray.length > 0
+        ? mergeArgs(defaultArray, cliClaudeArgs)
+        : cliClaudeArgs;
+      await runCommand(profile, claudeArgs);
     } catch (error) { handleError(error); }
   });
 
@@ -174,6 +189,52 @@ program
     }
   });
 
+// config command with subcommands
+const configCmd = program
+  .command('config')
+  .description('Manage cc-use configuration')
+  .action(async () => {
+    try { await configListCommand(); }
+    catch (error) { handleError(error); }
+  });
+
+configCmd
+  .command('set <key> [value...]')
+  .allowUnknownOption()
+  .description('Set a config value')
+  .action(async (key: string, valueParts: string[]) => {
+    try {
+      if (valueParts.length === 0) throw new Error('Value is required');
+      const value = key === 'claudeArgs' ? valueParts : valueParts.join(' ');
+      await configSetCommand(key, value);
+    }
+    catch (error) { handleError(error); }
+  });
+
+configCmd
+  .command('get <key>')
+  .description('Get a config value')
+  .action(async (key: string) => {
+    try { await configGetCommand(key); }
+    catch (error) { handleError(error); }
+  });
+
+configCmd
+  .command('delete <key>')
+  .description('Delete a config value')
+  .action(async (key: string) => {
+    try { await configDeleteCommand(key); }
+    catch (error) { handleError(error); }
+  });
+
+configCmd
+  .command('list')
+  .description('List all config values')
+  .action(async () => {
+    try { await configListCommand(); }
+    catch (error) { handleError(error); }
+  });
+
 // Handle `cc-use <profile>` as shortcut for `cc-use run <profile>`
 const args = process.argv.slice(2);
 if (args.length > 0) {
@@ -193,3 +254,43 @@ if (process.argv.length <= 2) {
 }
 
 program.parse();
+
+// Split a string into args respecting quoted segments
+function splitArgs(str: string): string[] {
+  const result: string[] = [];
+  const regex = /[^\s"']+|"([^"]*)"|'([^']*)'/g;
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(str)) !== null) {
+    result.push(match[1] ?? match[2] ?? match[0]);
+  }
+  return result;
+}
+
+// Merge default args with CLI args; CLI wins on conflicts
+// e.g. default: --model opus --verbose  cli: --model sonnet
+//   => --model sonnet --verbose
+function mergeArgs(defaults: string[], overrides: string[]): string[] {
+  // Collect CLI flags (both --flag value pairs and boolean --flags)
+  const cliFlags = new Set<string>();
+  for (let i = 0; i < overrides.length; i++) {
+    if (overrides[i].startsWith('-')) {
+      cliFlags.add(overrides[i]);
+    }
+  }
+
+  const result: string[] = [];
+  let i = 0;
+  while (i < defaults.length) {
+    const token = defaults[i];
+    if (token.startsWith('-') && cliFlags.has(token)) {
+      // Skip this flag + its value if it has one
+      i++;
+      if (i < defaults.length && !defaults[i].startsWith('-')) i++;
+      continue;
+    }
+    result.push(token);
+    i++;
+  }
+
+  return [...result, ...overrides];
+}

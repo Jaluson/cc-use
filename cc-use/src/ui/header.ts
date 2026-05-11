@@ -19,6 +19,6 @@ export function printCommandHeader(title: string, description?: string): void {
   if (description) {
     console.log(pc.gray(`  ${s.bullet} ${description}`));
   }
-  console.log(pc.dim('  ' + '─'.repeat(Math.min(title.length + description?.length || 0 + 4, 50))));
+  console.log(pc.dim('  ' + '─'.repeat(Math.min(title.length + (description?.length ?? 0) + 4, 50))));
   console.log();
 }

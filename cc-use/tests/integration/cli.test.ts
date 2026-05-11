@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { execSync } from 'node:child_process';
 import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const cli = join(process.cwd(), 'dist', 'index.js');
+const pkg = JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf-8'));
 
 describe('CLI integration', () => {
   it('should show help', () => {
@@ -15,7 +17,7 @@ describe('CLI integration', () => {
 
   it('should show version', () => {
     const output = execSync(`node "${cli}" --version`, { encoding: 'utf-8' });
-    expect(output).toContain('0.1.4');
+    expect(output).toContain(pkg.version);
   });
 
   it('should list presets', () => {
