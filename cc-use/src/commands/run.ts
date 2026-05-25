@@ -7,6 +7,7 @@ import { loadPreset } from '../core/preset.js';
 import { restoreBackup } from '../core/atomic-write.js';
 import { printCommandHeader, success, warning } from '../ui/index.js';
 import { promptProfileSelectionWithInfo } from './_interactive.js';
+import { getEnvConfig } from '../core/config.js';
 import pc from 'picocolors';
 
 export async function runCommand(
@@ -33,10 +34,15 @@ export async function runCommand(
     console.log(pc.dim('  Starting Claude Code...'));
     console.log();
 
+    // Load custom environment variables
+    const envConfig = await getEnvConfig();
+    const spawnEnv = { ...process.env, ...envConfig };
+
     const claude = spawn('claude', claudeArgs, {
       stdio: 'inherit',
       cwd,
       shell: true,
+      env: spawnEnv,
     });
 
     await new Promise<void>((resolve, reject) => {

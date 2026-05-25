@@ -6,6 +6,7 @@ import {
   listConfig,
   validateKey,
   getAllowedKeys,
+  getEnvConfig,
   type ConfigValue,
 } from '../core/config.js';
 import { printCommandHeader, printKeyValue, success, warning, s } from '../ui/index.js';

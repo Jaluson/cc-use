@@ -73,6 +73,43 @@ CLI args override defaults when conflicting:
 cc-use run --model sonnet   # Uses sonnet, not opus
 ```
 
+### 6. Configure Environment Variables (Optional)
+
+Set custom environment variables that will be written to settings.json and passed to Claude Code:
+
+```bash
+# Set environment variables
+cc-use config env set CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
+cc-use config env set NODE_ENV=production
+
+# View environment variables
+cc-use config env
+
+# Delete environment variables
+cc-use config env delete NODE_ENV
+```
+
+### 7. Configure Settings.json Fields (Optional)
+
+Override specific fields in settings.json:
+
+```bash
+# Set boolean values
+cc-use config settings set promptCaching.enabled true
+
+# Set arrays (comma-separated)
+cc-use config settings set permissions.bash.allow npm,git,yarn
+
+# Set nested fields using dot notation
+cc-use config settings set hooks.beforeBuild echo 'building'
+
+# View all settings overrides
+cc-use config settings
+
+# Delete a field
+cc-use config settings delete promptCaching.enabled
+```
+
 ### Common Commands
 
 ```bash
@@ -162,6 +199,43 @@ cc-use config set claudeArgs --model opus
 
 ```bash
 cc-use run --model sonnet   # 实际使用 sonnet，不是 opus
+```
+
+### 6. 配置环境变量（可选）
+
+设置自定义环境变量，将被写入 settings.json 并传递给 Claude Code：
+
+```bash
+# 设置环境变量
+cc-use config env set CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
+cc-use config env set NODE_ENV=production
+
+# 查看环境变量
+cc-use config env
+
+# 删除环境变量
+cc-use config env delete NODE_ENV
+```
+
+### 7. 配置 Settings.json 字段（可选）
+
+覆盖 settings.json 中的特定字段：
+
+```bash
+# 设置布尔值
+cc-use config settings set promptCaching.enabled true
+
+# 设置数组（逗号分隔）
+cc-use config settings set permissions.bash.allow npm,git,yarn
+
+# 使用点表示法设置嵌套字段
+cc-use config settings set hooks.beforeBuild echo 'building'
+
+# 查看所有 settings 覆盖
+cc-use config settings
+
+# 删除字段
+cc-use config settings delete promptCaching.enabled
 ```
 
 ### 常用命令

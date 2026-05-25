@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.6] - 2026-05-25
+
+### Added
+
+- `cc-use config env` subcommands for managing environment variables
+  - Environment variables are now written to `settings.json` `env` field and passed via process environment
+  - `cc-use config env set KEY=VALUE` — set environment variables
+  - `cc-use config env get [key]` — view environment variables
+  - `cc-use config env delete <key>` — delete environment variables
+  - `cc-use config env list` — list all environment variables
+- `cc-use config settings` subcommands for managing settings.json field overrides
+  - `cc-use config settings set <key> <value>` — override any settings.json field
+  - `cc-use config settings get [key]` — view settings overrides
+  - `cc-use config settings delete <key>` — delete settings override
+  - `cc-use config settings list` — list all settings overrides
+  - Supports nested fields using dot notation (e.g., `permissions.bash.allow`)
+  - Supports arrays (comma-separated values), booleans, numbers, and JSON objects
+- Enhanced configuration merge priority: existing settings → user env config → user settings overrides → profile env → preset settings
+
+### Changed
+
+- Refactored configuration system to separate concerns: default config, environment variables, and settings field overrides
+- Improved `cc-use config` output to only show profile and claudeArgs keys
+- Updated quick start guide with environment variables and settings configuration examples
+
 ## [0.1.5] - 2025-05-11
 
 ### Added

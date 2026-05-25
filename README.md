@@ -129,17 +129,51 @@ cc-use clean    # rollback 的别名
 #### 默认配置管理
 
 ```bash
+# 基础配置
 cc-use config                             # 列出所有配置
 cc-use config set profile <name>          # 设定默认 profile
 cc-use config set claudeArgs --model opus # 设定默认 Claude 参数
 cc-use config get <key>                   # 获取配置值
 cc-use config delete <key>                # 删除配置值
+
+# 环境变量配置（写入 settings.json 并传递给 Claude）
+cc-use config env set KEY=VALUE           # 设置环境变量
+cc-use config env get [key]               # 查看环境变量
+cc-use config env delete <key>            # 删除环境变量
+cc-use config env list                    # 列出所有环境变量
+
+# Settings.json 字段覆盖
+cc-use config settings set <key> <value>  # 覆盖 settings.json 字段
+cc-use config settings get [key]          # 查看 settings 覆盖
+cc-use config settings delete <key>       # 删除 settings 覆盖
+cc-use config settings list               # 列出所有 settings 覆盖
 ```
 
 | Key | 说明 | 示例 |
 |-----|------|------|
 | `profile` | `use` / `run` 的默认 profile | `cc-use config set profile my-kimi` |
 | `claudeArgs` | 默认传递给 Claude Code 的参数 | `cc-use config set claudeArgs --model opus` |
+
+**环境变量配置示例：**
+```bash
+# 设置 Claude Code 配置
+cc-use config env set CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
+
+# 设置多个环境变量
+cc-use config env set NODE_ENV=production DEBUG=true
+```
+
+**Settings 字段覆盖示例：**
+```bash
+# 设置布尔值
+cc-use config settings set promptCaching.enabled true
+
+# 设置数组（逗号分隔）
+cc-use config settings set permissions.bash.allow npm,git,yarn
+
+# 使用点表示法设置嵌套字段
+cc-use config settings set hooks.beforeBuild "echo 'building'"
+```
 
 当默认参数与命令行参数冲突时，命令行参数优先：
 
@@ -288,11 +322,45 @@ cc-use clean    # alias for rollback
 #### Default Configuration
 
 ```bash
+# Basic configuration
 cc-use config                             # List all config values
 cc-use config set profile <name>          # Set default profile
 cc-use config set claudeArgs --model opus # Set default Claude args
 cc-use config get <key>                   # Get a config value
 cc-use config delete <key>                # Delete a config value
+
+# Environment variables (written to settings.json and passed to Claude)
+cc-use config env set KEY=VALUE           # Set environment variables
+cc-use config env get [key]               # View environment variables
+cc-use config env delete <key>            # Delete environment variables
+cc-use config env list                    # List all environment variables
+
+# Settings.json field overrides
+cc-use config settings set <key> <value>  # Override settings.json fields
+cc-use config settings get [key]          # View settings overrides
+cc-use config settings delete <key>       # Delete settings override
+cc-use config settings list               # List all settings overrides
+```
+
+**Environment variables example:**
+```bash
+# Set Claude Code configuration
+cc-use config env set CLAUDE_CODE_DISABLE_AUTO_MEMORY=1
+
+# Set multiple environment variables
+cc-use config env set NODE_ENV=production DEBUG=true
+```
+
+**Settings field overrides example:**
+```bash
+# Set boolean values
+cc-use config settings set promptCaching.enabled true
+
+# Set arrays (comma-separated)
+cc-use config settings set permissions.bash.allow npm,git,yarn
+
+# Use dot notation for nested fields
+cc-use config settings set hooks.beforeBuild "echo 'building'"
 ```
 
 | Key | Description | Example |

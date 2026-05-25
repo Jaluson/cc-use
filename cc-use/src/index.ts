@@ -15,6 +15,8 @@ import { rollbackCommand } from './commands/rollback.js';
 import { exportCommand } from './commands/export.js';
 import { importFromCcSwitchCommand } from './commands/import-from-cc-switch.js';
 import { configSetCommand, configGetCommand, configDeleteCommand, configListCommand } from './commands/config.js';
+import { configEnvSetCommand, configEnvGetCommand, configEnvDeleteCommand, configEnvListCommand } from './commands/config-env.js';
+import { configSettingsSetCommand, configSettingsGetCommand, configSettingsDeleteCommand, configSettingsListCommand } from './commands/config-settings.js';
 import { getConfigValue } from './core/config.js';
 import { promptProfileSelection } from './commands/_interactive.js';
 import { printBox, s } from './ui/index.js';
@@ -232,6 +234,88 @@ configCmd
   .description('List all config values')
   .action(async () => {
     try { await configListCommand(); }
+    catch (error) { handleError(error); }
+  });
+
+// env subcommands
+const envCmd = configCmd
+  .command('env')
+  .description('Manage environment variables')
+  .action(async () => {
+    try { await configEnvListCommand(); }
+    catch (error) { handleError(error); }
+  });
+
+envCmd
+  .command('set <pair...>')
+  .description('Set environment variables (KEY=VALUE format)')
+  .action(async (pairs: string[]) => {
+    try { await configEnvSetCommand(pairs); }
+    catch (error) { handleError(error); }
+  });
+
+envCmd
+  .command('get [key]')
+  .description('Get environment variable value(s)')
+  .action(async (key?: string) => {
+    try { await configEnvGetCommand(key); }
+    catch (error) { handleError(error); }
+  });
+
+envCmd
+  .command('delete <key>')
+  .description('Delete an environment variable')
+  .action(async (key: string) => {
+    try { await configEnvDeleteCommand(key); }
+    catch (error) { handleError(error); }
+  });
+
+envCmd
+  .command('list')
+  .description('List all environment variables')
+  .action(async () => {
+    try { await configEnvListCommand(); }
+    catch (error) { handleError(error); }
+  });
+
+// settings subcommands
+const settingsCmd = configCmd
+  .command('settings')
+  .description('Manage settings.json field overrides')
+  .action(async () => {
+    try { await configSettingsListCommand(); }
+    catch (error) { handleError(error); }
+  });
+
+settingsCmd
+  .command('set <key> <value>')
+  .description('Set a settings.json field value')
+  .action(async (key: string, value: string) => {
+    try { await configSettingsSetCommand(key, value); }
+    catch (error) { handleError(error); }
+  });
+
+settingsCmd
+  .command('get [key]')
+  .description('Get settings.json field value(s)')
+  .action(async (key?: string) => {
+    try { await configSettingsGetCommand(key); }
+    catch (error) { handleError(error); }
+  });
+
+settingsCmd
+  .command('delete <key>')
+  .description('Delete a settings.json field override')
+  .action(async (key: string) => {
+    try { await configSettingsDeleteCommand(key); }
+    catch (error) { handleError(error); }
+  });
+
+settingsCmd
+  .command('list')
+  .description('List all settings.json field overrides')
+  .action(async () => {
+    try { await configSettingsListCommand(); }
     catch (error) { handleError(error); }
   });
 
