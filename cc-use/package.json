@@ -1,6 +1,6 @@
 {
   "name": "@jaluson/cc-use",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Claude Code Provider Runtime Management CLI",
   "license": "MIT",
   "author": "jaluson",
